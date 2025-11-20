@@ -19,14 +19,17 @@ class SpotifyWidget(tk.Frame):
                 ))
             except Exception: print("Spotify Auth Failed")
 
-        tk.Label(self, text="Spotify", font=config.FONT_MED, bg=config.BG_COLOR, fg="gray").pack(pady=(10,5))
+        # TITLE: Set to Green
+        tk.Label(self, text="Spotify", font=config.FONT_MED, 
+                 bg=config.BG_COLOR, fg=config.SPOTIFY_GREEN).pack(pady=(10,5))
 
-        # Track Info (Expands to fill upper area)
+        # Track Info
         self.track_info_frame = tk.Frame(self, bg=config.BG_COLOR)
         self.track_info_frame.pack(expand=True)
 
+        # TRACK NAME: Set to Green
         self.track_lbl = tk.Label(self.track_info_frame, text="Not Playing", font=config.FONT_LARGE, 
-                                  bg=config.BG_COLOR, fg=config.FG_COLOR, wraplength=300, justify="center")
+                                  bg=config.BG_COLOR, fg=config.SPOTIFY_GREEN, wraplength=300, justify="center")
         self.track_lbl.pack()
         
         self.device_lbl = tk.Label(self.track_info_frame, text="", font=config.FONT_MED, bg=config.BG_COLOR, fg="gray")
@@ -38,17 +41,17 @@ class SpotifyWidget(tk.Frame):
 
         btn_conf = {"bg": "#333", "fg": "white", "bd": 0, "width": 5, "font": config.FONT_MED}
         tk.Button(c_frame, text="⏮", command=self.prev_track, **btn_conf).pack(side="left", padx=10, ipady=5)
-        tk.Button(c_frame, text="⏯", command=self.play_pause, bg=config.ACCENT_COLOR, 
+        # Play button also uses Green now for visual consistency
+        tk.Button(c_frame, text="⏯", command=self.play_pause, bg=config.SPOTIFY_GREEN, 
                   fg="white", bd=0, width=5, font=config.FONT_MED).pack(side="left", padx=10, ipady=5)
         tk.Button(c_frame, text="⏭", command=self.next_track, **btn_conf).pack(side="left", padx=10, ipady=5)
         
-        # Playlist List - Made Taller and wider
+        # Playlist List
         tk.Label(self, text="Quick Playlists", bg=config.BG_COLOR, fg="gray", 
                  font=config.FONT_SMALL).pack(pady=(15,0))
         
-        # Height 6 means it will show 6 playlists at once, filling more space
         self.playlist_box = tk.Listbox(self, bg="#1E1E1E", fg="#AAA", height=6, bd=0, 
-                                       font=config.FONT_MED, selectbackground=config.ACCENT_COLOR)
+                                       font=config.FONT_MED, selectbackground=config.SPOTIFY_GREEN)
         self.playlist_box.pack(fill="x", padx=5, pady=5)
         self.playlist_box.bind('<<ListboxSelect>>', self.play_selected_playlist)
         
@@ -59,7 +62,7 @@ class SpotifyWidget(tk.Frame):
     def load_playlists(self):
         if not self.sp: return
         try:
-            results = self.sp.current_user_playlists(limit=20) # Fetch more playlists
+            results = self.sp.current_user_playlists(limit=20)
             for item in results['items']:
                 self.playlists.append((item['name'], item['uri']))
                 self.playlist_box.insert(tk.END, f" {item['name']}")
