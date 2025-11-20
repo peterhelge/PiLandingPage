@@ -1,5 +1,6 @@
 import tkinter as tk
 import config
+from components import RoundedButton
 
 class PomodoroWidget(tk.Frame):
     def __init__(self, parent):
@@ -10,30 +11,31 @@ class PomodoroWidget(tk.Frame):
         self.minutes = 25
         self.seconds = 0
         
-        # TITLE: Set to Blue
         tk.Label(self, text="Focus Timer", font=config.FONT_MED, 
                  bg=config.BG_COLOR, fg=config.POMODORO_BLUE).pack(pady=(10,5))
         
-        # Status Message
         self.status_lbl = tk.Label(self, text="Ready", font=config.FONT_LARGE, 
                                    bg=config.BG_COLOR, fg="gray")
         self.status_lbl.pack(pady=10)
 
-        # TIMER NUMBERS: Set to Blue
         self.time_lbl = tk.Label(self, text=f"{self.minutes:02d}:{self.seconds:02d}", 
-                                 font=("Helvetica", 90, "bold"), 
+                                 font=("Verdana", 90, "bold"), # Changed to Verdana
                                  bg=config.BG_COLOR, fg=config.POMODORO_BLUE)
         self.time_lbl.pack(expand=True)
         
         # Button Container
         btn_frame = tk.Frame(self, bg=config.BG_COLOR)
-        btn_frame.pack(pady=40, fill="x")
+        btn_frame.pack(pady=40)
 
-        style = {"bg": "#333", "fg": "white", "bd": 0, "font": config.FONT_MED}
+        # Modern Rounded Buttons
+        RoundedButton(btn_frame, text="Start", command=self.start_timer, 
+                      width=80, height=45, bg_color="#333").pack(side="left", padx=10)
         
-        tk.Button(btn_frame, text="Start", command=self.start_timer, **style).pack(side="left", expand=True, fill="x", padx=5, ipady=10)
-        tk.Button(btn_frame, text="Pause", command=self.pause_timer, **style).pack(side="left", expand=True, fill="x", padx=5, ipady=10)
-        tk.Button(btn_frame, text="Reset", command=self.reset_timer, **style).pack(side="left", expand=True, fill="x", padx=5, ipady=10)
+        RoundedButton(btn_frame, text="Pause", command=self.pause_timer, 
+                      width=80, height=45, bg_color="#333").pack(side="left", padx=10)
+        
+        RoundedButton(btn_frame, text="Reset", command=self.reset_timer, 
+                      width=80, height=45, bg_color="#333").pack(side="left", padx=10)
 
     def update_timer(self):
         if self.state == "RUNNING":

@@ -2,6 +2,7 @@ import tkinter as tk
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 import config
+from components import RoundedButton  # Import our new modern buttons
 
 class SpotifyWidget(tk.Frame):
     def __init__(self, parent):
@@ -19,7 +20,7 @@ class SpotifyWidget(tk.Frame):
                 ))
             except Exception: print("Spotify Auth Failed")
 
-        # TITLE: Darker Green
+        # Title
         tk.Label(self, text="Spotify", font=config.FONT_MED, 
                  bg=config.BG_COLOR, fg=config.SPOTIFY_GREEN).pack(pady=(10,5))
 
@@ -27,7 +28,6 @@ class SpotifyWidget(tk.Frame):
         self.track_info_frame = tk.Frame(self, bg=config.BG_COLOR)
         self.track_info_frame.pack(expand=True)
 
-        # TRACK NAME: Darker Green
         self.track_lbl = tk.Label(self.track_info_frame, text="Not Playing", font=config.FONT_LARGE, 
                                   bg=config.BG_COLOR, fg=config.SPOTIFY_GREEN, wraplength=300, justify="center")
         self.track_lbl.pack()
@@ -35,24 +35,27 @@ class SpotifyWidget(tk.Frame):
         self.device_lbl = tk.Label(self.track_info_frame, text="", font=config.FONT_MED, bg=config.BG_COLOR, fg="gray")
         self.device_lbl.pack()
 
-        # Controls
+        # Controls - NEW MODERN BUTTONS
         c_frame = tk.Frame(self, bg=config.BG_COLOR)
-        c_frame.pack(pady=10)
+        c_frame.pack(pady=15)
 
-        btn_conf = {"bg": "#333", "fg": "white", "bd": 0, "width": 5, "font": config.FONT_MED}
-        tk.Button(c_frame, text="⏮", command=self.prev_track, **btn_conf).pack(side="left", padx=10, ipady=5)
+        # Using our new RoundedButton class
+        # Previous
+        RoundedButton(c_frame, text="<<", command=self.prev_track, width=60, height=40, 
+                      bg_color="#333", hover_color="#444").pack(side="left", padx=5)
         
-        # Play Button: Darker Green
-        tk.Button(c_frame, text="⏯", command=self.play_pause, bg=config.SPOTIFY_GREEN, 
-                  fg="white", bd=0, width=5, font=config.FONT_MED).pack(side="left", padx=10, ipady=5)
+        # Play/Pause (Colored)
+        RoundedButton(c_frame, text="Play", command=self.play_pause, width=80, height=40, 
+                      bg_color=config.SPOTIFY_GREEN, hover_color="#159045").pack(side="left", padx=5)
         
-        tk.Button(c_frame, text="⏭", command=self.next_track, **btn_conf).pack(side="left", padx=10, ipady=5)
+        # Next
+        RoundedButton(c_frame, text=">>", command=self.next_track, width=60, height=40, 
+                      bg_color="#333", hover_color="#444").pack(side="left", padx=5)
         
-        # Playlist List
+        # Playlists
         tk.Label(self, text="Quick Playlists", bg=config.BG_COLOR, fg="gray", 
                  font=config.FONT_SMALL).pack(pady=(15,0))
         
-        # LISTBOX: Updated to use 'FONT_PLAYLIST' (softer look)
         self.playlist_box = tk.Listbox(self, bg="#1E1E1E", fg="#AAA", height=6, bd=0, 
                                        font=config.FONT_PLAYLIST, selectbackground=config.SPOTIFY_GREEN)
         self.playlist_box.pack(fill="x", padx=5, pady=5)
@@ -61,6 +64,20 @@ class SpotifyWidget(tk.Frame):
         self.playlists = []
         self.load_playlists()
         self.check_playback()
+
+    def get_active_device_id(self):
+        """Helper to find a device to play music on"""
+        if not self.sp: return None
+        try:
+            devices = self.sp.devices()
+            # Return active device
+            for d in devices['devices']:
+                if d['is_active']: return d['id']
+            # Or return first available device
+            if devices['devices']:
+                return devices['devices'][0]['id']
+        except: pass
+        return None
 
     def load_playlists(self):
         if not self.sp: return
@@ -91,7 +108,10 @@ class SpotifyWidget(tk.Frame):
             try:
                 pb = self.sp.current_playback()
                 if pb and pb['is_playing']: self.sp.pause_playback()
-                else: self.sp.start_playback()
+                else: 
+                    # Force start with device ID if idle
+                    dev_id = self.get_active_device_id()
+                    self.sp.start_playback(device_id=dev_id)
                 self.check_playback()
             except: pass
 
@@ -107,5 +127,8 @@ class SpotifyWidget(tk.Frame):
             index = selection[0]
             uri = self.playlists[index][1]
             try:
-                self.sp.start_playback(context_uri=uri)
-            except: pass
+                # FIX: Explicitly define device_id
+                dev_id = self.get_active_device_id()
+                self.sp.start_playback(context_uri=uri, device_id=dev_id)
+            except Exception as e:
+                print(f"Playlist Play Error: {e}")
