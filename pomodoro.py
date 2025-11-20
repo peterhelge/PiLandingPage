@@ -1,6 +1,14 @@
 import tkinter as tk
 import config
 from components import RoundedButton
+from datetime import datetime
+import locale
+
+# Try to set locale for date formatting (e.g. "Thursday" instead of "Thu")
+try:
+    locale.setlocale(locale.LC_TIME, '')
+except:
+    pass
 
 class PomodoroWidget(tk.Frame):
     def __init__(self, parent):
@@ -11,31 +19,74 @@ class PomodoroWidget(tk.Frame):
         self.minutes = 25
         self.seconds = 0
         
-        tk.Label(self, text="Focus Timer", font=config.FONT_MED, 
-                 bg=config.BG_COLOR, fg=config.POMODORO_BLUE).pack(pady=(10,5))
+        # ================= REAL TIME CLOCK =================
         
+        # 1. Time Label (Big, Bright)
+        self.clock_lbl = tk.Label(self, text="--:--", font=("Verdana", 45, "bold"), 
+                                  bg=config.BG_COLOR, fg="white")
+        self.clock_lbl.pack(pady=(0, 0))
+        
+        # 2. Date Label (Smaller, Modern Grey)
+        self.date_lbl = tk.Label(self, text="...", font=("Verdana", 14), 
+                                 bg=config.BG_COLOR, fg="#888888")
+        self.date_lbl.pack(pady=(0, 20)) # 20px gap before the focus timer starts
+
+        # ================= FOCUS TIMER =================
+
+        # Divider (Optional, but helps separate Real Time from Focus Time)
+        tk.Frame(self, height=2, bg=config.DIVIDER_COLOR, width=200).pack(pady=10)
+
+        # Title (Blue)
+        tk.Label(self, text="Focus Timer", font=config.FONT_MED, 
+                 bg=config.BG_COLOR, fg=config.POMODORO_BLUE).pack(pady=(20,5))
+        
+        # Status Text
         self.status_lbl = tk.Label(self, text="Ready", font=config.FONT_LARGE, 
                                    bg=config.BG_COLOR, fg="gray")
-        self.status_lbl.pack(pady=10)
+        self.status_lbl.pack(pady=5)
 
+        # Countdown Numbers
         self.time_lbl = tk.Label(self, text=f"{self.minutes:02d}:{self.seconds:02d}", 
-                                 font=("Verdana", 90, "bold"), 
+                                 font=("Verdana", 80, "bold"), 
                                  bg=config.BG_COLOR, fg=config.POMODORO_BLUE)
         self.time_lbl.pack(expand=True)
         
         # Button Container
         btn_frame = tk.Frame(self, bg=config.BG_COLOR)
-        btn_frame.pack(pady=40)
+        btn_frame.pack(pady=30)
 
-        # --- BIGGER BUTTONS (130x70) ---
+        # Buttons
         RoundedButton(btn_frame, text="Start", command=self.start_timer, 
-                      width=130, height=70, bg_color="#333").pack(side="left", padx=10)
+                      width=120, height=65, bg_color="#333").pack(side="left", padx=10)
         
         RoundedButton(btn_frame, text="Pause", command=self.pause_timer, 
-                      width=130, height=70, bg_color="#333").pack(side="left", padx=10)
+                      width=120, height=65, bg_color="#333").pack(side="left", padx=10)
         
         RoundedButton(btn_frame, text="Reset", command=self.reset_timer, 
-                      width=130, height=70, bg_color="#333").pack(side="left", padx=10)
+                      width=120, height=65, bg_color="#333").pack(side="left", padx=10)
+        
+        # Start the clock loop
+        self.update_clock()
+
+    def update_clock(self):
+        """Updates the real-time clock every second"""
+        now = datetime.now()
+        
+        # 24-Hour Format (HH:MM)
+        current_time = now.strftime("%H:%M")
+        
+        # Date Format (e.g., "Thu 20 Nov")
+        current_date = now.strftime("%a %d %b")
+        
+        # Update Labels
+        if self.clock_lbl.cget("text") != current_time:
+            self.clock_lbl.config(text=current_time)
+        
+        if self.date_lbl.cget("text") != current_date:
+            self.date_lbl.config(text=current_date)
+
+        # Schedule next update (every 1 second)
+        self.after(1000, self.update_clock)
 
     def update_timer(self):
         if self.state == "RUNNING":
