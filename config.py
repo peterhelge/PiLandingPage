@@ -8,6 +8,8 @@ WEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")
 WEATHER_LAT = os.getenv("WEATHER_LAT")
 WEATHER_LON = os.getenv("WEATHER_LON")
 WEATHER_UNITS = os.getenv("WEATHER_UNITS", "metric")
+# NEW: Load the custom location name
+WEATHER_LOCATION_NAME = os.getenv("WEATHER_LOCATION_NAME")
 
 SPOTIPY_CLIENT_ID = os.getenv("SPOTIPY_CLIENT_ID")
 SPOTIPY_CLIENT_SECRET = os.getenv("SPOTIPY_CLIENT_SECRET")
@@ -19,16 +21,24 @@ BG_COLOR = "#121212"
 FG_COLOR = "#CCCCCC"      
 DIVIDER_COLOR = "#333333"
 
-# --- SECTION COLORS ---
-SPOTIFY_GREEN = "#1DB954" 
-POMODORO_BLUE = "#4FC3F7" 
-WEATHER_YELLOW = "#FFD700"  # Gold/Yellow for Weather
+# --- SECTION COLORS (UPDATED) ---
+# Darker Green (Was #1DB954)
+SPOTIFY_GREEN = "#1AA34A" 
 
-# Keep ACCENT_COLOR as a fallback to prevent crashes
-ACCENT_COLOR = "#1DB954" 
+# Darker Blue (Was #4FC3F7)
+POMODORO_BLUE = "#29B6F6" 
+
+# Yellow remains the same
+WEATHER_YELLOW = "#FFD700"
+
+# Fallback
+ACCENT_COLOR = SPOTIFY_GREEN
 
 # --- FONTS ---
 FONT_HUGE = ("Helvetica", 80, "bold")
 FONT_LARGE = ("Helvetica", 30, "bold")
 FONT_MED = ("Helvetica", 18)
 FONT_SMALL = ("Helvetica", 12)
+
+# NEW: Softer font for playlists (Smaller, not bold)
+FONT_PLAYLIST = ("Helvetica", 15)

@@ -9,12 +9,12 @@ class WeatherWidget(tk.Frame):
         super().__init__(parent, bg=config.BG_COLOR, bd=0)
         self.pack(side="left", fill="both", expand=True, padx=20, pady=20)
         
-        # TITLE: Set to Yellow
+        # TITLE: Yellow
         self.title_lbl = tk.Label(self, text="Weather", font=config.FONT_MED, 
                  bg=config.BG_COLOR, fg=config.WEATHER_YELLOW)
         self.title_lbl.pack(pady=(10,5))
 
-        # LOCATION: Set to Yellow
+        # LOCATION: Yellow
         self.location_lbl = tk.Label(self, text="Loading...", font=config.FONT_MED, 
                  bg=config.BG_COLOR, fg=config.WEATHER_YELLOW)
         self.location_lbl.pack(pady=(0,5))
@@ -61,9 +61,14 @@ class WeatherWidget(tk.Frame):
             data = res.json()
 
             if "current" in data:
-                # Get City Name
-                timezone_str = data.get("timezone", "Unknown")
-                city_name = timezone_str.split("/")[-1].replace("_", " ")
+                # --- UPDATED LOCATION LOGIC ---
+                if config.WEATHER_LOCATION_NAME:
+                    city_name = config.WEATHER_LOCATION_NAME
+                else:
+                    # Fallback to timezone if .env value is missing
+                    timezone_str = data.get("timezone", "Unknown")
+                    city_name = timezone_str.split("/")[-1].replace("_", " ")
+                
                 self.location_lbl.config(text=city_name)
 
                 current = data["current"]
