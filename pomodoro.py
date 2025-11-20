@@ -19,7 +19,7 @@ class PomodoroWidget(tk.Frame):
         self.status_lbl.pack(pady=10)
 
         self.time_lbl = tk.Label(self, text=f"{self.minutes:02d}:{self.seconds:02d}", 
-                                 font=("Verdana", 90, "bold"), # Changed to Verdana
+                                 font=("Verdana", 90, "bold"), 
                                  bg=config.BG_COLOR, fg=config.POMODORO_BLUE)
         self.time_lbl.pack(expand=True)
         
@@ -27,15 +27,15 @@ class PomodoroWidget(tk.Frame):
         btn_frame = tk.Frame(self, bg=config.BG_COLOR)
         btn_frame.pack(pady=40)
 
-        # Modern Rounded Buttons
+        # --- BIGGER BUTTONS (130x70) ---
         RoundedButton(btn_frame, text="Start", command=self.start_timer, 
-                      width=80, height=45, bg_color="#333").pack(side="left", padx=10)
+                      width=130, height=70, bg_color="#333").pack(side="left", padx=10)
         
         RoundedButton(btn_frame, text="Pause", command=self.pause_timer, 
-                      width=80, height=45, bg_color="#333").pack(side="left", padx=10)
+                      width=130, height=70, bg_color="#333").pack(side="left", padx=10)
         
         RoundedButton(btn_frame, text="Reset", command=self.reset_timer, 
-                      width=80, height=45, bg_color="#333").pack(side="left", padx=10)
+                      width=130, height=70, bg_color="#333").pack(side="left", padx=10)
 
     def update_timer(self):
         if self.state == "RUNNING":

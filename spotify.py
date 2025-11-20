@@ -2,7 +2,7 @@ import tkinter as tk
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 import config
-from components import RoundedButton  # Import our new modern buttons
+from components import RoundedButton 
 
 class SpotifyWidget(tk.Frame):
     def __init__(self, parent):
@@ -35,28 +35,40 @@ class SpotifyWidget(tk.Frame):
         self.device_lbl = tk.Label(self.track_info_frame, text="", font=config.FONT_MED, bg=config.BG_COLOR, fg="gray")
         self.device_lbl.pack()
 
-        # Controls - NEW MODERN BUTTONS
+        # Playback Controls
         c_frame = tk.Frame(self, bg=config.BG_COLOR)
-        c_frame.pack(pady=15)
+        c_frame.pack(pady=(10, 5))
 
-        # Using our new RoundedButton class
-        # Previous
-        RoundedButton(c_frame, text="<<", command=self.prev_track, width=60, height=40, 
+        RoundedButton(c_frame, text="<<", command=self.prev_track, width=60, height=45, 
                       bg_color="#333", hover_color="#444").pack(side="left", padx=5)
         
-        # Play/Pause (Colored)
-        RoundedButton(c_frame, text="Play", command=self.play_pause, width=80, height=40, 
+        RoundedButton(c_frame, text="Play", command=self.play_pause, width=80, height=45, 
                       bg_color=config.SPOTIFY_GREEN, hover_color="#159045").pack(side="left", padx=5)
         
-        # Next
-        RoundedButton(c_frame, text=">>", command=self.next_track, width=60, height=40, 
+        RoundedButton(c_frame, text=">>", command=self.next_track, width=60, height=45, 
                       bg_color="#333", hover_color="#444").pack(side="left", padx=5)
+
+        # --- NEW: Volume Controls ---
+        v_frame = tk.Frame(self, bg=config.BG_COLOR)
+        v_frame.pack(pady=(0, 10))
+
+        # Volume Down
+        RoundedButton(v_frame, text="-", command=lambda: self.change_vol(-10), width=40, height=40, 
+                      bg_color="#222", hover_color="#333").pack(side="left", padx=10)
+        
+        # Label
+        tk.Label(v_frame, text="VOL", font=config.FONT_SMALL, bg=config.BG_COLOR, fg="gray").pack(side="left")
+
+        # Volume Up
+        RoundedButton(v_frame, text="+", command=lambda: self.change_vol(10), width=40, height=40, 
+                      bg_color="#222", hover_color="#333").pack(side="left", padx=10)
+
         
         # Playlists
         tk.Label(self, text="Quick Playlists", bg=config.BG_COLOR, fg="gray", 
-                 font=config.FONT_SMALL).pack(pady=(15,0))
+                 font=config.FONT_SMALL).pack(pady=(5,0))
         
-        self.playlist_box = tk.Listbox(self, bg="#1E1E1E", fg="#AAA", height=6, bd=0, 
+        self.playlist_box = tk.Listbox(self, bg="#1E1E1E", fg="#AAA", height=5, bd=0, 
                                        font=config.FONT_PLAYLIST, selectbackground=config.SPOTIFY_GREEN)
         self.playlist_box.pack(fill="x", padx=5, pady=5)
         self.playlist_box.bind('<<ListboxSelect>>', self.play_selected_playlist)
@@ -66,14 +78,11 @@ class SpotifyWidget(tk.Frame):
         self.check_playback()
 
     def get_active_device_id(self):
-        """Helper to find a device to play music on"""
         if not self.sp: return None
         try:
             devices = self.sp.devices()
-            # Return active device
             for d in devices['devices']:
                 if d['is_active']: return d['id']
-            # Or return first available device
             if devices['devices']:
                 return devices['devices'][0]['id']
         except: pass
@@ -109,7 +118,6 @@ class SpotifyWidget(tk.Frame):
                 pb = self.sp.current_playback()
                 if pb and pb['is_playing']: self.sp.pause_playback()
                 else: 
-                    # Force start with device ID if idle
                     dev_id = self.get_active_device_id()
                     self.sp.start_playback(device_id=dev_id)
                 self.check_playback()
@@ -121,13 +129,19 @@ class SpotifyWidget(tk.Frame):
     def prev_track(self): 
         if self.sp: self.sp.previous_track()
 
+    def change_vol(self, step):
+        if self.sp:
+            try:
+                pb = self.sp.current_playback()
+                if pb: self.sp.volume(max(0, min(100, pb['device']['volume_percent'] + step)))
+            except: pass
+
     def play_selected_playlist(self, event):
         selection = event.widget.curselection()
         if selection and self.sp:
             index = selection[0]
             uri = self.playlists[index][1]
             try:
-                # FIX: Explicitly define device_id
                 dev_id = self.get_active_device_id()
                 self.sp.start_playback(context_uri=uri, device_id=dev_id)
             except Exception as e:
