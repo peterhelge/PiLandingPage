@@ -1,0 +1,15 @@
+# Secrets
+.env
+
+# Python System Files
+env/
+venv/
+__pycache__/
+*.pyc
+
+# Spotify Cache (contains login token)
+.cache
+.cache-*
+
+# OS System Files
+.DS_Store
