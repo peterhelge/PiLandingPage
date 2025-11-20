@@ -17,12 +17,14 @@ SPOTIPY_SCOPE = "user-read-playback-state user-modify-playback-state playlist-re
 
 # --- UI THEME ---
 BG_COLOR = "#121212"
-FG_COLOR = "#FFFFFF"
-ACCENT_COLOR = "#1DB954" # Spotify Green
+
+# UPDATED: Softer Grey Text (easier on eyes)
+FG_COLOR = "#CCCCCC" 
+ACCENT_COLOR = "#1DB954" 
 DIVIDER_COLOR = "#333333"
 
-# --- FONTS ---
-FONT_HUGE = ("Helvetica", 50, "bold")
-FONT_LARGE = ("Helvetica", 24, "bold")
-FONT_MED = ("Helvetica", 14)
-FONT_SMALL = ("Helvetica", 10)
+# --- UPDATED FONTS (Bigger to fill screen) ---
+FONT_HUGE = ("Helvetica", 80, "bold")    # Was 50
+FONT_LARGE = ("Helvetica", 30, "bold")   # Was 24
+FONT_MED = ("Helvetica", 18)             # Was 14
+FONT_SMALL = ("Helvetica", 12)           # Was 10
