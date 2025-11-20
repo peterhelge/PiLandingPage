@@ -1,7 +1,6 @@
 import os
 from dotenv import load_dotenv
 
-# Load secrets from .env file
 load_dotenv()
 
 # --- API KEYS ---
@@ -17,12 +16,16 @@ SPOTIPY_SCOPE = "user-read-playback-state user-modify-playback-state playlist-re
 
 # --- UI THEME ---
 BG_COLOR = "#121212"
-FG_COLOR = "#CCCCCC"      # Default Light Grey for normal text
+FG_COLOR = "#CCCCCC"      
 DIVIDER_COLOR = "#333333"
 
-# --- SECTION SPECIFIC COLORS ---
-SPOTIFY_GREEN = "#1DB954" # Official Spotify Green
-POMODORO_BLUE = "#4FC3F7" # A nice bright Light Blue
+# --- SECTION COLORS ---
+SPOTIFY_GREEN = "#1DB954" 
+POMODORO_BLUE = "#4FC3F7" 
+WEATHER_YELLOW = "#FFD700"  # Gold/Yellow for Weather
+
+# Keep ACCENT_COLOR as a fallback to prevent crashes
+ACCENT_COLOR = "#1DB954" 
 
 # --- FONTS ---
 FONT_HUGE = ("Helvetica", 80, "bold")

@@ -9,12 +9,17 @@ class WeatherWidget(tk.Frame):
         super().__init__(parent, bg=config.BG_COLOR, bd=0)
         self.pack(side="left", fill="both", expand=True, padx=20, pady=20)
         
-        # Location Header (Empty at start)
-        self.location_lbl = tk.Label(self, text="Loading...", font=config.FONT_MED, 
-                 bg=config.BG_COLOR, fg=config.ACCENT_COLOR)
-        self.location_lbl.pack(pady=(10,5))
+        # TITLE: Set to Yellow
+        self.title_lbl = tk.Label(self, text="Weather", font=config.FONT_MED, 
+                 bg=config.BG_COLOR, fg=config.WEATHER_YELLOW)
+        self.title_lbl.pack(pady=(10,5))
 
-        # Icon (Use expand to push content)
+        # LOCATION: Set to Yellow
+        self.location_lbl = tk.Label(self, text="Loading...", font=config.FONT_MED, 
+                 bg=config.BG_COLOR, fg=config.WEATHER_YELLOW)
+        self.location_lbl.pack(pady=(0,5))
+
+        # Icon
         self.icon_lbl = tk.Label(self, bg=config.BG_COLOR)
         self.icon_lbl.pack(pady=10, expand=True)
 
@@ -28,7 +33,7 @@ class WeatherWidget(tk.Frame):
                                  bg=config.BG_COLOR, fg="gray")
         self.desc_lbl.pack(pady=5)
         
-        # Forecast High/Low
+        # Forecast
         self.forecast_lbl = tk.Label(self, text="H: --°  L: --°", font=config.FONT_MED, 
                                      bg=config.BG_COLOR, fg=config.FG_COLOR)
         self.forecast_lbl.pack(pady=(5, 20))
@@ -56,7 +61,7 @@ class WeatherWidget(tk.Frame):
             data = res.json()
 
             if "current" in data:
-                # 1. Get City Name from Timezone (e.g., "Europe/Stockholm" -> "Stockholm")
+                # Get City Name
                 timezone_str = data.get("timezone", "Unknown")
                 city_name = timezone_str.split("/")[-1].replace("_", " ")
                 self.location_lbl.config(text=city_name)
@@ -77,7 +82,6 @@ class WeatherWidget(tk.Frame):
                 icon_path = self.get_icon_path(condition)
                 if os.path.exists(icon_path):
                     img = Image.open(icon_path)
-                    # Made icon slightly larger (120x120)
                     img = img.resize((120, 120), Image.Resampling.LANCZOS)
                     self.photo = ImageTk.PhotoImage(img)
                     self.icon_lbl.config(image=self.photo)
