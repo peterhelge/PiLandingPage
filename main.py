@@ -7,10 +7,17 @@ from spotify import SpotifyWidget
 class DashboardApp(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("PiLandingPage") 
-        self.geometry("800x480")
-        # self.attributes('-fullscreen', True) # Uncomment on Pi
+        # 1. Set Fullscreen
+        self.attributes('-fullscreen', True)
+        
+        # 2. Bind the "Escape" key to close the app (useful for testing)
+        self.bind("<Escape>", lambda event: self.destroy())
+
         self.configure(bg=config.BG_COLOR)
+        
+        # Remove the specific geometry line, fullscreen handles it now
+        # self.geometry("800x480")
+        # self.attributes('-fullscreen', True) # Uncomment on Pi
         
         # Main Container
         container = tk.Frame(self, bg=config.BG_COLOR)
