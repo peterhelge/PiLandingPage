@@ -45,11 +45,15 @@ def draw_thunder(filename, bg_color="#121212"):
     draw.line(points, fill="#FFEA00", width=4, joint="curve")
     img.save(filename)
 
-print("Generating icons...")
-draw_sun("assets/clear.png")
-draw_cloud("assets/clouds.png")
-draw_rain("assets/rain.png")
-draw_snow("assets/snow.png")
-draw_thunder("assets/thunderstorm.png")
-draw_cloud("assets/mist.png", color="#78909C")
-print("Done. Icons saved to ./assets/")
+def generate_icons():
+    print("Generating icons...")
+    draw_sun("assets/clear.png")
+    draw_cloud("assets/clouds.png")
+    draw_rain("assets/rain.png")
+    draw_snow("assets/snow.png")
+    draw_thunder("assets/thunderstorm.png")
+    draw_cloud("assets/mist.png", color="#78909C")
+    print("Done. Icons saved to ./assets/")
+
+if __name__ == "__main__":
+    generate_icons()

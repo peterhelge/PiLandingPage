@@ -51,15 +51,34 @@ class WeatherWidget(tk.Frame):
         return path
 
     def update_weather(self):
+        # Start a thread to fetch data so the UI doesn't freeze
+        import threading
+        t = threading.Thread(target=self._fetch_weather_data, daemon=True)
+        t.start()
+
+        # Schedule the next update (every 1 hour)
+        self.after(3600000, self.update_weather)
+
+    def _fetch_weather_data(self):
         if not config.WEATHER_API_KEY:
-            self.desc_lbl.config(text="No API Key")
+            self.after(0, lambda: self.desc_lbl.config(text="No API Key"))
             return
 
         try:
             url = f"https://api.openweathermap.org/data/3.0/onecall?lat={config.WEATHER_LAT}&lon={config.WEATHER_LON}&exclude=minutely,alerts&appid={config.WEATHER_API_KEY}&units={config.WEATHER_UNITS}"
-            res = requests.get(url)
+            res = requests.get(url, timeout=10) # Added timeout
+            res.raise_for_status()
             data = res.json()
+            
+            # Schedule UI update on the main thread
+            self.after(0, lambda: self._update_ui_with_data(data))
 
+        except Exception as e:
+            print(f"Weather Fetch Error: {e}")
+            self.after(0, lambda: self.desc_lbl.config(text="Error"))
+
+    def _update_ui_with_data(self, data):
+        try:
             if "current" in data:
                 # --- UPDATED LOCATION LOGIC ---
                 if config.WEATHER_LOCATION_NAME:
@@ -88,9 +107,7 @@ class WeatherWidget(tk.Frame):
                 if os.path.exists(icon_path):
                     img = Image.open(icon_path)
                     img = img.resize((120, 120), Image.Resampling.LANCZOS)
-                    self.photo = ImageTk.PhotoImage(img)
+                    self.photo = ImageTk.PhotoImage(img) # Keep reference
                     self.icon_lbl.config(image=self.photo)
         except Exception as e:
-            print(f"Weather Error: {e}")
-
-        self.after(3600000, self.update_weather)
+            print(f"Weather UI Update Error: {e}")

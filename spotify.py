@@ -98,38 +98,63 @@ class SpotifyWidget(tk.Frame):
         except Exception: pass
 
     def check_playback(self):
-        if self.sp:
-            try:
-                playback = self.sp.current_playback()
-                if playback and playback['is_playing']:
-                    track = playback['item']['name']
-                    artist = playback['item']['artists'][0]['name']
-                    device = playback['device']['name']
-                    self.track_lbl.config(text=f"{track}\n{artist}")
-                    self.device_lbl.config(text=f"on {device}")
-                else:
-                    self.track_lbl.config(text="Paused / Idle")
-            except Exception: pass
+        # Poll in a background thread
+        import threading
+        t = threading.Thread(target=self._poll_spotify, daemon=True)
+        t.start()
+        
+        # Schedule next poll
         self.after(5000, self.check_playback)
 
+    def _poll_spotify(self):
+        if not self.sp: return
+        try:
+            playback = self.sp.current_playback()
+            # Update UI on main thread
+            self.after(0, lambda: self._update_ui_playback(playback))
+        except Exception: 
+            pass
+
+    def _update_ui_playback(self, playback):
+        try:
+            if playback and playback['is_playing']:
+                track = playback['item']['name']
+                artist = playback['item']['artists'][0]['name']
+                device = playback['device']['name']
+                self.track_lbl.config(text=f"{track}\n{artist}")
+                self.device_lbl.config(text=f"on {device}")
+            else:
+                self.track_lbl.config(text="Paused / Idle")
+        except Exception: pass
+
+    # Refactor play/pause/next/prev/vol to run in background too to be safe
+    # although they are less frequent, they can still hang.
+    
     def play_pause(self):
-        if self.sp:
-            try:
-                pb = self.sp.current_playback()
-                if pb and pb['is_playing']: self.sp.pause_playback()
-                else: 
-                    dev_id = self.get_active_device_id()
-                    self.sp.start_playback(device_id=dev_id)
-                self.check_playback()
-            except: pass
+        self._run_async(self._play_pause_impl)
+
+    def _play_pause_impl(self):
+        if not self.sp: return
+        try:
+            pb = self.sp.current_playback()
+            if pb and pb['is_playing']: self.sp.pause_playback()
+            else: 
+                dev_id = self.get_active_device_id()
+                self.sp.start_playback(device_id=dev_id)
+            # Trigger an immediate check (optional, or just wait for next poll)
+            self.after(500, self.check_playback) 
+        except: pass
 
     def next_track(self): 
-        if self.sp: self.sp.next_track()
+        self._run_async(lambda: self.sp.next_track() if self.sp else None)
         
     def prev_track(self): 
-        if self.sp: self.sp.previous_track()
+        self._run_async(lambda: self.sp.previous_track() if self.sp else None)
 
     def change_vol(self, step):
+        self._run_async(lambda: self._vol_impl(step))
+
+    def _vol_impl(self, step):
         if self.sp:
             try:
                 pb = self.sp.current_playback()
@@ -141,8 +166,15 @@ class SpotifyWidget(tk.Frame):
         if selection and self.sp:
             index = selection[0]
             uri = self.playlists[index][1]
-            try:
-                dev_id = self.get_active_device_id()
-                self.sp.start_playback(context_uri=uri, device_id=dev_id)
-            except Exception as e:
-                print(f"Playlist Play Error: {e}")
+            self._run_async(lambda: self._play_playlist_impl(uri))
+
+    def _play_playlist_impl(self, uri):
+        try:
+            dev_id = self.get_active_device_id()
+            self.sp.start_playback(context_uri=uri, device_id=dev_id)
+        except Exception as e:
+            print(f"Playlist Play Error: {e}")
+
+    def _run_async(self, func):
+        import threading
+        threading.Thread(target=func, daemon=True).start()

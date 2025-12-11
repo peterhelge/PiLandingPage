@@ -1,8 +1,14 @@
 import tkinter as tk
+import os
 import config
 from weather import WeatherWidget
 from pomodoro import PomodoroWidget
 from spotify import SpotifyWidget
+import create_icons
+
+# Check for assets and generate if missing
+if not os.path.exists("assets") or not os.listdir("assets"):
+    create_icons.generate_icons()
 
 class DashboardApp(tk.Tk):
     def __init__(self):
