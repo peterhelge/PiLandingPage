@@ -5,58 +5,26 @@ from weather import WeatherWidget
 from pomodoro import PomodoroWidget
 from spotify import SpotifyWidget
 import create_icons
+from swipe_container import SwipeableContainer
 
 # Check for assets and generate if missing
 if not os.path.exists("assets") or not os.listdir("assets"):
     create_icons.generate_icons()
 
-class DashboardApp(tk.Tk):
-    def __init__(self):
-        super().__init__()
-        self.title("PiLandingPage")
-        self.configure(bg=config.BG_COLOR)
+class DashboardPage(tk.Frame):
+    def __init__(self, parent):
+        super().__init__(parent, bg=config.BG_COLOR)
         
-        # ================= KIOSK SETTINGS =================
-        
-        # 1. Remove the Window Title Bar and Borders immediately
-        # This prevents the "X" and "-" buttons from appearing
-        self.overrideredirect(True)
-        
-        # 2. Hide the Mouse Cursor
-        # Essential for a clean touch-screen experience
-        self.config(cursor="none")
-        
-        # 3. Get Screen Dimensions dynamically
-        # This ensures it works in both Portrait and Landscape without hardcoding numbers
-        screen_width = self.winfo_screenwidth()
-        screen_height = self.winfo_screenheight()
-        self.geometry(f"{screen_width}x{screen_height}+0+0")
-        
-        # 4. Force Fullscreen with a slight delay
-        # The 'after(100)' waits 100ms. This gives the Raspberry Pi OS window manager
-        # time to register the window before we force it to take over the screen.
-        # This fixes the issue where the taskbar might stay visible.
-        self.after(100, lambda: self.attributes('-fullscreen', True))
-        
-        # 5. Emergency Exit
-        # Press 'ESC' on a keyboard to close the app (useful for maintenance)
-        self.bind("<Escape>", lambda event: self.destroy())
-
-        # ================= LAYOUT =================
-
         # Main Container
-        container = tk.Frame(self, bg=config.BG_COLOR)
-        container.pack(fill="both", expand=True)
-
+        # We don't need another container frame, simple pack colums directly into self
         # Create 3 Columns
-        # We use expand=True so they share the width equally
-        col1 = tk.Frame(container, bg=config.BG_COLOR)
+        col1 = tk.Frame(self, bg=config.BG_COLOR)
         col1.pack(side="left", fill="both", expand=True)
         
-        col2 = tk.Frame(container, bg=config.BG_COLOR)
+        col2 = tk.Frame(self, bg=config.BG_COLOR)
         col2.pack(side="left", fill="both", expand=True)
         
-        col3 = tk.Frame(container, bg=config.BG_COLOR)
+        col3 = tk.Frame(self, bg=config.BG_COLOR)
         col3.pack(side="left", fill="both", expand=True)
         
         # --- ADD WIDGETS ---
@@ -65,16 +33,52 @@ class DashboardApp(tk.Tk):
         WeatherWidget(col1)
         
         # Divider Line 1
-        tk.Frame(container, width=1, bg=config.DIVIDER_COLOR).pack(side="left", fill="y")
+        tk.Frame(self, width=1, bg=config.DIVIDER_COLOR).pack(side="left", fill="y")
         
         # Middle Column: Pomodoro Timer
         PomodoroWidget(col2)
         
         # Divider Line 2
-        tk.Frame(container, width=1, bg=config.DIVIDER_COLOR).pack(side="left", fill="y")
+        tk.Frame(self, width=1, bg=config.DIVIDER_COLOR).pack(side="left", fill="y")
         
         # Right Column: Spotify
         SpotifyWidget(col3)
+
+class HomeAssistantPage(tk.Frame):
+    def __init__(self, parent):
+        super().__init__(parent, bg=config.BG_COLOR)
+        
+        # Placeholder Content
+        label = tk.Label(self, text="Home Assistant Dashboard", font=config.FONT_LARGE, 
+                         bg=config.BG_COLOR, fg=config.FG_COLOR)
+        label.pack(expand=True)
+        
+        sub_label = tk.Label(self, text="(Coming Soon)", font=config.FONT_MED, 
+                             bg=config.BG_COLOR, fg="gray")
+        sub_label.pack(expand=True)
+
+class DashboardApp(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.title("PiLandingPage")
+        self.configure(bg=config.BG_COLOR)
+        
+        # ================= KIOSK SETTINGS =================
+        self.overrideredirect(True)
+        self.config(cursor="none")
+        
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        self.geometry(f"{screen_width}x{screen_height}+0+0")
+        
+        self.after(100, lambda: self.attributes('-fullscreen', True))
+        self.bind("<Escape>", lambda event: self.destroy())
+
+        # ================= LAYOUT =================
+        
+        # Initialize the Swipe Container with our pages
+        self.container = SwipeableContainer(self, pages=[DashboardPage, HomeAssistantPage])
+        self.container.pack(fill="both", expand=True)
 
 if __name__ == "__main__":
     app = DashboardApp()
