@@ -16,6 +16,8 @@ class PomodoroWidget(tk.Frame):
         self.pack(side="left", fill="both", expand=True, padx=20, pady=20)
 
         self.state = "STOPPED"
+        self.timer_mode = "FOCUS" # FOCUS or BREAK
+        self.pomodoro_count = 0
         self.minutes = 25
         self.seconds = 0
         
@@ -39,8 +41,9 @@ class PomodoroWidget(tk.Frame):
         tk.Frame(self, height=2, bg=config.DIVIDER_COLOR, width=200).pack(pady=10)
 
         # Title (Blue)
-        tk.Label(self, text="Focus Timer", font=config.FONT_MED, 
-                 bg=config.BG_COLOR, fg=config.POMODORO_BLUE).pack(pady=(20,5))
+        self.title_lbl = tk.Label(self, text="Focus Timer", font=config.FONT_MED, 
+                 bg=config.BG_COLOR, fg=config.POMODORO_BLUE)
+        self.title_lbl.pack(pady=(20,5))
         
         # Status Text
         self.status_lbl = tk.Label(self, text="Ready", font=config.FONT_LARGE, 
@@ -94,9 +97,39 @@ class PomodoroWidget(tk.Frame):
         if self.state == "RUNNING":
             if self.seconds == 0:
                 if self.minutes == 0:
-                    self.state = "STOPPED"
-                    self.status_lbl.config(text="Done!", fg="red")
-                    return
+                    # Timer Finished a Cycle
+                    if self.timer_mode == "FOCUS":
+                        self.pomodoro_count += 1
+                        
+                        if self.pomodoro_count % 4 == 0:
+                             # LONG BREAK (15 min)
+                            self.timer_mode = "BREAK"
+                            self.minutes = 15
+                            self.seconds = 0
+                            self.status_lbl.config(text="Long Break 🏖️", fg="#00E676") # Bright Green
+                            self.title_lbl.config(text="Recharge (15m)", fg="#00E676")
+                            self.time_lbl.config(fg="#00E676")
+                        else:
+                            # SHORT BREAK (5 min)
+                            self.timer_mode = "BREAK"
+                            self.minutes = 5
+                            self.seconds = 0
+                            self.status_lbl.config(text="Short Break ☕", fg=config.BRAND_GREEN if hasattr(config, 'BRAND_GREEN') else "green")
+                            self.title_lbl.config(text="Break Time", fg="green")
+                            self.time_lbl.config(fg="green")
+                    else:
+                        # Switch back to Focus
+                        self.timer_mode = "FOCUS"
+                        self.minutes = 25
+                        self.seconds = 0
+                        self.status_lbl.config(text=f"Focus Session #{self.pomodoro_count + 1} 🎯", fg=config.FG_COLOR)
+                        self.title_lbl.config(text="Focus Timer", fg=config.POMODORO_BLUE)
+                        self.time_lbl.config(fg=config.POMODORO_BLUE)
+                    
+                    # Continue running (Auto-start next phase)
+                    self.update_timer()
+                    return 
+                    
                 self.minutes -= 1
                 self.seconds = 59
             else:
@@ -108,7 +141,8 @@ class PomodoroWidget(tk.Frame):
     def start_timer(self):
         if self.state != "RUNNING":
             self.state = "RUNNING"
-            self.status_lbl.config(text="Focusing...", fg=config.FG_COLOR)
+            msg = "Focusing..." if self.timer_mode == "FOCUS" else "Relaxing..."
+            self.status_lbl.config(text=msg, fg=config.FG_COLOR)
             self.update_timer()
 
     def pause_timer(self):
@@ -117,7 +151,10 @@ class PomodoroWidget(tk.Frame):
 
     def reset_timer(self):
         self.state = "STOPPED"
+        self.timer_mode = "FOCUS"
+        self.pomodoro_count = 0 
         self.minutes = 25
         self.seconds = 0
-        self.time_lbl.config(text=f"{self.minutes:02d}:{self.seconds:02d}")
+        self.time_lbl.config(text=f"{self.minutes:02d}:{self.seconds:02d}", fg=config.POMODORO_BLUE)
+        self.title_lbl.config(text="Focus Timer", fg=config.POMODORO_BLUE)
         self.status_lbl.config(text="Ready", fg="gray")
