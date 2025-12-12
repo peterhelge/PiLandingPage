@@ -60,16 +60,12 @@ class SpotifyWidget(tk.Frame):
             self.icon_vup = ImageTk.PhotoImage(Image.open("assets/vol_up.png").resize(sz))
             
             # Vol Down
-            RoundedButton(v_frame, text="", command=self.vol_down, width=60, height=50, 
-                          bg_color="#333", hover_color="#444", icon=self.icon_vdown).pack(side="left", padx=10)
+            RoundedButton(v_frame, text="", command=self.vol_down, width=110, height=60, 
+                          bg_color="#333", hover_color="#444", icon=self.icon_vdown).pack(side="left", padx=20)
             
-            # Label
-            self.vol_show_lbl = tk.Label(v_frame, text="Vol", font=config.FONT_SMALL, bg=config.BG_COLOR, fg="gray")
-            self.vol_show_lbl.pack(side="left", padx=5)
-
             # Vol Up
-            RoundedButton(v_frame, text="", command=self.vol_up, width=60, height=50, 
-                          bg_color="#333", hover_color="#444", icon=self.icon_vup).pack(side="left", padx=10)
+            RoundedButton(v_frame, text="", command=self.vol_up, width=110, height=60, 
+                          bg_color="#333", hover_color="#444", icon=self.icon_vup).pack(side="left", padx=20)
             
         except Exception as e:
              print(f"Vol Icon Error: {e}")
