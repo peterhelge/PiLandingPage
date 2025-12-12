@@ -65,6 +65,18 @@ def draw_lightbulb(filename, bg_color="#121212", bulb_color="#555555"):
     
     img.save(filename)
 
+def draw_power(filename, bg_color="#121212", fg_color="#D32F2F"):
+    img = Image.new("RGBA", (100, 100), bg_color)
+    draw = ImageDraw.Draw(img)
+    
+    # Circle arc (almost full circle)
+    draw.arc((20, 20, 80, 80), start=300, end=240, fill=fg_color, width=8)
+    
+    # Vertical line at top
+    draw.line((50, 20, 50, 50), fill=fg_color, width=8)
+    
+    img.save(filename)
+
 def generate_icons():
     print("Generating icons...")
     draw_sun("assets/clear.png")
@@ -77,6 +89,9 @@ def generate_icons():
     # Home Assistant Icons
     draw_lightbulb("assets/bulb_on.png", bulb_color="#FFD700") # Gold/Yellow
     draw_lightbulb("assets/bulb_off.png", bulb_color="#444444") # Dark Gray
+    
+    # System Icons
+    draw_power("assets/power.png", fg_color="#E53935") # Red
     
     print("Done. Icons saved to ./assets/")
 

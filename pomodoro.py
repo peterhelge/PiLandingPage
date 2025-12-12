@@ -21,10 +21,37 @@ class PomodoroWidget(tk.Frame):
         
         # ================= REAL TIME CLOCK =================
         
+        # ================= REAL TIME CLOCK =================
+        
+        # Clock Container (to align Clock and Power Button)
+        self.clock_frame = tk.Frame(self, bg=config.BG_COLOR)
+        self.clock_frame.pack(pady=(0, 0))
+        
         # 1. Time Label (Big, Bright)
-        self.clock_lbl = tk.Label(self, text="--:--", font=("Verdana", 45, "bold"), 
+        self.clock_lbl = tk.Label(self.clock_frame, text="--:--", font=("Verdana", 45, "bold"), 
                                   bg=config.BG_COLOR, fg="white")
-        self.clock_lbl.pack(pady=(0, 0))
+        self.clock_lbl.pack(side="left")
+        
+        # Power Button (Next to Clock)
+        # Using a small, subtle RoundedButton with Red Icon
+        def quick_shutdown():
+            import platform
+            if platform.system() == "Linux":
+                import os
+                os.system("sudo shutdown -h now")
+            else:
+                print("Simulating Shutdown...")
+        
+        # Load icon if possible
+        try:
+            from PIL import Image, ImageTk
+            self.power_icon = ImageTk.PhotoImage(Image.open("assets/power.png").resize((40, 40)))
+            RoundedButton(self.clock_frame, text="", icon=self.power_icon, command=quick_shutdown, 
+                          width=50, height=50, bg_color=config.BG_COLOR, hover_color="#330000").pack(side="left", padx=(20, 0))
+        except:
+             # Fallback text
+             RoundedButton(self.clock_frame, text="OFF", command=quick_shutdown, 
+                          width=50, height=50, bg_color="#440000").pack(side="left", padx=(20, 0))
         
         # 2. Date Label (Smaller, Modern Grey)
         self.date_lbl = tk.Label(self, text="...", font=("Verdana", 14), 

@@ -35,33 +35,37 @@ class SpotifyWidget(tk.Frame):
         self.device_lbl = tk.Label(self.track_info_frame, text="", font=config.FONT_MED, bg=config.BG_COLOR, fg="gray")
         self.device_lbl.pack()
 
-        # Playback Controls
+        # Playback Controls (Enlarged)
         c_frame = tk.Frame(self, bg=config.BG_COLOR)
         c_frame.pack(pady=(10, 5))
 
-        RoundedButton(c_frame, text="<<", command=self.prev_track, width=60, height=45, 
-                      bg_color="#333", hover_color="#444").pack(side="left", padx=5)
+        RoundedButton(c_frame, text="<<", command=self.prev_track, width=80, height=60, 
+                      bg_color="#333", hover_color="#444").pack(side="left", padx=10)
         
-        RoundedButton(c_frame, text="Play", command=self.play_pause, width=80, height=45, 
-                      bg_color=config.SPOTIFY_GREEN, hover_color="#159045").pack(side="left", padx=5)
+        RoundedButton(c_frame, text="Play", command=self.play_pause, width=120, height=60, 
+                      bg_color=config.SPOTIFY_GREEN, hover_color="#159045").pack(side="left", padx=10)
         
-        RoundedButton(c_frame, text=">>", command=self.next_track, width=60, height=45, 
-                      bg_color="#333", hover_color="#444").pack(side="left", padx=5)
+        RoundedButton(c_frame, text=">>", command=self.next_track, width=80, height=60, 
+                      bg_color="#333", hover_color="#444").pack(side="left", padx=10)
 
-        # --- NEW: Volume Controls ---
+        # Volume Slider
         v_frame = tk.Frame(self, bg=config.BG_COLOR)
-        v_frame.pack(pady=(0, 10))
+        v_frame.pack(fill="x", padx=40, pady=(15, 10))
 
-        # Volume Down
-        RoundedButton(v_frame, text="-", command=lambda: self.change_vol(-10), width=40, height=40, 
-                      bg_color="#222", hover_color="#333").pack(side="left", padx=10)
+        tk.Label(v_frame, text="Volume", font=config.FONT_SMALL, bg=config.BG_COLOR, fg="gray").pack(anchor="w")
         
-        # Label
-        tk.Label(v_frame, text="VOL", font=config.FONT_SMALL, bg=config.BG_COLOR, fg="gray").pack(side="left")
-
-        # Volume Up
-        RoundedButton(v_frame, text="+", command=lambda: self.change_vol(10), width=40, height=40, 
-                      bg_color="#222", hover_color="#333").pack(side="left", padx=10)
+        # Slider
+        self.dragging_vol = False
+        self.vol_slider = tk.Scale(v_frame, from_=0, to=100, orient="horizontal", 
+                                   bg=config.BG_COLOR, fg=config.SPOTIFY_GREEN, 
+                                   highlightthickness=0, bd=0, troughcolor="#333",
+                                   activebackground=config.SPOTIFY_GREEN,
+                                   command=self.on_vol_change)
+        self.vol_slider.pack(fill="x")
+        
+        # Bind events to prevent jumping while dragging
+        self.vol_slider.bind("<ButtonPress-1>", lambda e: setattr(self, 'dragging_vol', True))
+        self.vol_slider.bind("<ButtonRelease-1>", lambda e: setattr(self, 'dragging_vol', False))
 
         
         # Playlists
@@ -123,6 +127,13 @@ class SpotifyWidget(tk.Frame):
                 device = playback['device']['name']
                 self.track_lbl.config(text=f"{track}\n{artist}")
                 self.device_lbl.config(text=f"on {device}")
+                
+                # Sync volume if not dragging
+                if not getattr(self, 'dragging_vol', False) and playback['device']:
+                    server_vol = playback['device']['volume_percent']
+                    # Only update if diff is significant (prevents jitter)
+                    if abs(self.vol_slider.get() - server_vol) > 2:
+                        self.vol_slider.set(server_vol)
             else:
                 self.track_lbl.config(text="Paused / Idle")
         except Exception: pass
@@ -151,14 +162,14 @@ class SpotifyWidget(tk.Frame):
     def prev_track(self): 
         self._run_async(lambda: self.sp.previous_track() if self.sp else None)
 
-    def change_vol(self, step):
-        self._run_async(lambda: self._vol_impl(step))
+    def on_vol_change(self, val):
+        vol = int(val)
+        self._run_async(lambda: self._set_vol_impl(vol))
 
-    def _vol_impl(self, step):
+    def _set_vol_impl(self, vol):
         if self.sp:
             try:
-                pb = self.sp.current_playback()
-                if pb: self.sp.volume(max(0, min(100, pb['device']['volume_percent'] + step)))
+                self.sp.volume(vol)
             except: pass
 
     def play_selected_playlist(self, event):
