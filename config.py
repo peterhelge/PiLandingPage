@@ -33,3 +33,10 @@ FONT_LARGE = ("Verdana", 28, "bold")
 FONT_MED = ("Verdana", 16)
 FONT_SMALL = ("Verdana", 11)
 FONT_PLAYLIST = ("Verdana", 14)
+
+# --- HOME ASSISTANT ---
+HA_BASE_URL = os.getenv("HA_BASE_URL", "http://homeassistant.local:8123")
+HA_ACCESS_TOKEN = os.getenv("HA_ACCESS_TOKEN")
+# Comma separated string in .env, converted to list here
+_ha_entities_str = os.getenv("HA_ENTITIES", "")
+HA_ENTITIES = [e.strip() for e in _ha_entities_str.split(",") if e.strip()]

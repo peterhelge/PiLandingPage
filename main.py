@@ -6,6 +6,9 @@ from pomodoro import PomodoroWidget
 from spotify import SpotifyWidget
 import create_icons
 from swipe_container import SwipeableContainer
+from home_assistant import HomeAssistantPage
+
+# ... imports ...
 
 # Check for assets and generate if missing
 if not os.path.exists("assets") or not os.listdir("assets"):
@@ -43,19 +46,6 @@ class DashboardPage(tk.Frame):
         
         # Right Column: Spotify
         SpotifyWidget(col3)
-
-class HomeAssistantPage(tk.Frame):
-    def __init__(self, parent):
-        super().__init__(parent, bg=config.BG_COLOR)
-        
-        # Placeholder Content
-        label = tk.Label(self, text="Home Assistant Dashboard", font=config.FONT_LARGE, 
-                         bg=config.BG_COLOR, fg=config.FG_COLOR)
-        label.pack(expand=True)
-        
-        sub_label = tk.Label(self, text="(Coming Soon)", font=config.FONT_MED, 
-                             bg=config.BG_COLOR, fg="gray")
-        sub_label.pack(expand=True)
 
 class DashboardApp(tk.Tk):
     def __init__(self):
