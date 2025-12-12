@@ -17,17 +17,34 @@ class SettingsPage(tk.Frame):
         btn_frame = tk.Frame(self, bg=config.BG_COLOR)
         btn_frame.pack(expand=True)
 
-        # Shutdown Button
-        RoundedButton(btn_frame, text="Shutdown System", command=self.shutdown, 
-                      width=250, height=80, bg_color="#D32F2F", hover_color="#B71C1C").pack(pady=20)
+        # Load Icons
+        from PIL import Image, ImageTk
+        self.icon_power = None
+        self.icon_reboot = None
+        self.icon_exit = None
 
-        # Reboot Button
-        RoundedButton(btn_frame, text="Reboot System", command=self.reboot, 
-                      width=250, height=80, bg_color="#FBC02D", hover_color="#F9A825").pack(pady=20)
+        try:
+            sz = (40, 40)
+            self.icon_power = ImageTk.PhotoImage(Image.open("assets/power.png").resize(sz))
+            self.icon_reboot = ImageTk.PhotoImage(Image.open("assets/reboot.png").resize(sz))
+            self.icon_exit = ImageTk.PhotoImage(Image.open("assets/exit.png").resize(sz))
+        except Exception as e:
+            print(f"Error loading icons: {e}")
+
+        # Shutdown Button (Red)
+        RoundedButton(btn_frame, text="Shutdown", command=self.shutdown, 
+                      width=260, height=70, bg_color="#C62828", hover_color="#B71C1C",
+                      icon=self.icon_power).pack(pady=15)
+
+        # Reboot Button (Orange)
+        RoundedButton(btn_frame, text="Reboot", command=self.reboot, 
+                      width=260, height=70, bg_color="#F9A825", hover_color="#F57F17",
+                      icon=self.icon_reboot).pack(pady=15)
         
-        # Exit App Button (Maintenance)
+        # Exit App Button (Blue/Gray) - Maintenance
         RoundedButton(btn_frame, text="Exit App", command=self.exit_app, 
-                      width=250, height=60, bg_color="#455A64", hover_color="#37474F").pack(pady=40)
+                      width=260, height=70, bg_color="#455A64", hover_color="#37474F",
+                      icon=self.icon_exit).pack(pady=15)
 
     def shutdown(self):
         print("Shutting down...")

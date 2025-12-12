@@ -91,9 +91,30 @@ def generate_icons():
     draw_lightbulb("assets/bulb_off.png", bulb_color="#444444") # Dark Gray
     
     # System Icons
-    draw_power("assets/power.png", fg_color="#E53935") # Red
+    draw_power("assets/power.png", fg_color="#E53935") # Red (Shutdown)
+    draw_reboot("assets/reboot.png", fg_color="#FDD835") # Yellow/Orange
+    draw_exit("assets/exit.png", fg_color="#90A4AE") # Blue/Gray
     
     print("Done. Icons saved to ./assets/")
+
+def draw_reboot(filename, bg_color="#121212", fg_color="#FDD835"):
+    img = Image.new("RGBA", (100, 100), bg_color)
+    draw = ImageDraw.Draw(img)
+    # Arrow Circle
+    draw.arc((20, 20, 80, 80), start=30, end=330, fill=fg_color, width=8)
+    # Arrow Head
+    draw.polygon([(70, 20), (90, 30), (70, 40)], fill=fg_color)
+    img.save(filename)
+
+def draw_exit(filename, bg_color="#121212", fg_color="#90A4AE"):
+    img = Image.new("RGBA", (100, 100), bg_color)
+    draw = ImageDraw.Draw(img)
+    # Door Frame
+    draw.rectangle((30, 20, 70, 80), outline=fg_color, width=5)
+    # Door Arrow
+    draw.line((40, 50, 85, 50), fill=fg_color, width=5)
+    draw.polygon([(80, 40), (95, 50), (80, 60)], fill=fg_color)
+    img.save(filename)
 
 if __name__ == "__main__":
     generate_icons()
