@@ -78,9 +78,7 @@ class HomeAssistantPage(tk.Frame):
         # Entity Grid Container
         self.grid_frame = tk.Frame(self, bg=config.BG_COLOR)
         self.grid_frame.pack(fill="both", expand=True, padx=20, pady=20)
-
-        print(f"DEBUG: HA_ENTITIES = {config.HA_ENTITIES}") # Debugging
-
+        
         if not config.HA_ENTITIES:
             tk.Label(self.grid_frame, 
                      text="No Entities Configured.\nAdd HA_ENTITIES to .env", 
@@ -89,19 +87,25 @@ class HomeAssistantPage(tk.Frame):
             self.create_widgets()
 
     def create_widgets(self):
+        print(f"DEBUG: create_widgets called with {len(config.HA_ENTITIES)} entities")
         # simple grid layout
         cols = 3
         for i, entity_id in enumerate(config.HA_ENTITIES):
-            row = i // cols
-            col = i % cols
-            
-            # Container for margin
-            frame_container = tk.Frame(self.grid_frame, bg=config.BG_COLOR)
-            frame_container.grid(row=row, column=col, sticky="nsew", padx=10, pady=10)
-            
-            # Actual Widget
-            w = HAWidget(frame_container, entity_id=entity_id)
-            w.pack(fill="both", expand=True)
+            print(f"DEBUG: creating widget for {entity_id}")
+            try:
+                row = i // cols
+                col = i % cols
+                
+                # Container for margin
+                frame_container = tk.Frame(self.grid_frame, bg=config.BG_COLOR)
+                frame_container.grid(row=row, column=col, sticky="nsew", padx=10, pady=10)
+                
+                # Actual Widget
+                w = HAWidget(frame_container, entity_id=entity_id)
+                w.pack(fill="both", expand=True)
+                print(f"DEBUG: widget created successfully")
+            except Exception as e:
+                print(f"DEBUG: Error creating widget: {e}")
 
         # Configure Grid Weights
         for i in range(cols):
