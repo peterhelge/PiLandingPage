@@ -34,6 +34,40 @@ class HAWidget(tk.Frame):
         
         self.update_state()
 
+    def toggle(self, event=None):
+        ha_client.toggle_entity(self.entity_id)
+        # Optimistic update
+        current = self.state_lbl.cget("text")
+        new_state = "Off" if current == "On" else "On"
+        self.state_lbl.config(text=f"{new_state}...", fg="yellow")
+        
+        # Force refresh soon
+        self.after(2000, self.update_state)
+
+    def update_state(self):
+        # Threaded fetch
+        threading.Thread(target=self._fetch, daemon=True).start()
+        # Schedule next poll (every 5s)
+        self.after(5000, self.update_state)
+
+    def _fetch(self):
+        state_obj = ha_client.get_entity_state(self.entity_id)
+        if state_obj:
+            self.after(0, lambda: self._update_ui(state_obj))
+
+    def _update_ui(self, state_obj):
+        state = state_obj['state']
+        # Try to use friendly name if available
+        if 'attributes' in state_obj and 'friendly_name' in state_obj['attributes']:
+            self.name_lbl.config(text=state_obj['attributes']['friendly_name'])
+        
+        # Color code
+        fg_color = "white"
+        if state.lower() == "on":
+            fg_color = config.SPOTIFY_GREEN
+        
+        self.state_lbl.config(text=state.title(), fg=fg_color)
+
 class HomeAssistantPage(tk.Frame):
     def __init__(self, parent):
         super().__init__(parent, bg=config.BG_COLOR)
