@@ -32,18 +32,18 @@ class SettingsPage(tk.Frame):
             print(f"Error loading icons: {e}")
 
         # Shutdown Button (Red)
-        RoundedButton(btn_frame, text="Shutdown", command=self.shutdown, 
-                      width=260, height=70, bg_color="#C62828", hover_color="#B71C1C",
+        RoundedButton(btn_frame, text="Power Off", subtitle="Turn off the system", command=self.shutdown, 
+                      width=350, height=90, bg_color="#C62828", hover_color="#B71C1C", # Slightly Darker Red
                       icon=self.icon_power).pack(pady=15)
 
         # Reboot Button (Orange)
-        RoundedButton(btn_frame, text="Reboot", command=self.reboot, 
-                      width=260, height=70, bg_color="#F9A825", hover_color="#F57F17",
+        RoundedButton(btn_frame, text="Reboot System", subtitle="Restart the Raspberry Pi", command=self.reboot, 
+                      width=350, height=90, bg_color="#F9A825", hover_color="#F57F17",
                       icon=self.icon_reboot).pack(pady=15)
         
         # Exit App Button (Blue/Gray) - Maintenance
-        RoundedButton(btn_frame, text="Exit App", command=self.exit_app, 
-                      width=260, height=70, bg_color="#455A64", hover_color="#37474F",
+        RoundedButton(btn_frame, text="Exit Kiosk", subtitle="Close app to desktop", command=self.exit_app, 
+                      width=350, height=90, bg_color="#455A64", hover_color="#37474F",
                       icon=self.icon_exit).pack(pady=15)
 
     def shutdown(self):
