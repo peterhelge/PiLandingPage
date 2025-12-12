@@ -95,6 +95,10 @@ def generate_icons():
     draw_reboot("assets/reboot.png", fg_color="#FDD835") # Yellow/Orange
     draw_exit("assets/exit.png", fg_color="#90A4AE") # Blue/Gray
     
+    # Volume Icons
+    draw_vol_down("assets/vol_down.png")
+    draw_vol_up("assets/vol_up.png")
+    
     print("Done. Icons saved to ./assets/")
 
 def draw_reboot(filename, bg_color="#121212", fg_color="#FDD835"):
@@ -114,6 +118,26 @@ def draw_exit(filename, bg_color="#121212", fg_color="#90A4AE"):
     # Door Arrow
     draw.line((40, 50, 85, 50), fill=fg_color, width=5)
     draw.polygon([(80, 40), (95, 50), (80, 60)], fill=fg_color)
+    img.save(filename)
+
+def draw_vol_down(filename, bg_color="#121212", fg_color="white"):
+    img = Image.new("RGBA", (100, 100), bg_color)
+    draw = ImageDraw.Draw(img)
+    # Speaker body
+    draw.polygon([(20, 35), (20, 65), (40, 65), (55, 80), (55, 20), (40, 35)], fill=fg_color)
+    # Low volume wave (small)
+    draw.arc((40, 40, 70, 60), 300, 60, fill=fg_color, width=4)
+    img.save(filename)
+
+def draw_vol_up(filename, bg_color="#121212", fg_color="white"):
+    img = Image.new("RGBA", (100, 100), bg_color)
+    draw = ImageDraw.Draw(img)
+    # Speaker body
+    draw.polygon([(20, 35), (20, 65), (40, 65), (55, 80), (55, 20), (40, 35)], fill=fg_color)
+    # High volume waves
+    draw.arc((40, 40, 70, 60), 300, 60, fill=fg_color, width=4)
+    draw.arc((30, 30, 80, 70), 300, 60, fill=fg_color, width=4)
+    draw.arc((20, 20, 90, 80), 300, 60, fill=fg_color, width=4)
     img.save(filename)
 
 if __name__ == "__main__":

@@ -48,24 +48,32 @@ class SpotifyWidget(tk.Frame):
         RoundedButton(c_frame, text=">>", command=self.next_track, width=65, height=60, 
                       bg_color="#333", hover_color="#444").pack(side="left", padx=5)
 
-        # Volume Slider
+        # Volume Controls
         v_frame = tk.Frame(self, bg=config.BG_COLOR)
-        v_frame.pack(fill="x", padx=40, pady=(15, 10))
+        v_frame.pack(pady=(15, 10))
 
-        tk.Label(v_frame, text="Volume", font=config.FONT_SMALL, bg=config.BG_COLOR, fg="gray").pack(anchor="w")
-        
-        # Slider
-        self.dragging_vol = False
-        self.vol_slider = tk.Scale(v_frame, from_=0, to=100, orient="horizontal", 
-                                   bg=config.BG_COLOR, fg=config.SPOTIFY_GREEN, 
-                                   highlightthickness=0, bd=0, troughcolor="#333",
-                                   activebackground=config.SPOTIFY_GREEN,
-                                   command=self.on_vol_change)
-        self.vol_slider.pack(fill="x")
-        
-        # Bind events to prevent jumping while dragging
-        self.vol_slider.bind("<ButtonPress-1>", lambda e: setattr(self, 'dragging_vol', True))
-        self.vol_slider.bind("<ButtonRelease-1>", lambda e: setattr(self, 'dragging_vol', False))
+        # Load Icons
+        try:
+            from PIL import Image, ImageTk
+            sz = (30, 30)
+            self.icon_vdown = ImageTk.PhotoImage(Image.open("assets/vol_down.png").resize(sz))
+            self.icon_vup = ImageTk.PhotoImage(Image.open("assets/vol_up.png").resize(sz))
+            
+            # Vol Down
+            RoundedButton(v_frame, text="", command=self.vol_down, width=60, height=50, 
+                          bg_color="#333", hover_color="#444", icon=self.icon_vdown).pack(side="left", padx=10)
+            
+            # Label
+            self.vol_show_lbl = tk.Label(v_frame, text="Vol", font=config.FONT_SMALL, bg=config.BG_COLOR, fg="gray")
+            self.vol_show_lbl.pack(side="left", padx=5)
+
+            # Vol Up
+            RoundedButton(v_frame, text="", command=self.vol_up, width=60, height=50, 
+                          bg_color="#333", hover_color="#444", icon=self.icon_vup).pack(side="left", padx=10)
+            
+        except Exception as e:
+             print(f"Vol Icon Error: {e}")
+             tk.Label(v_frame, text="Vol Error", bg="red").pack()
 
         
         # Playlists
@@ -128,12 +136,9 @@ class SpotifyWidget(tk.Frame):
                 self.track_lbl.config(text=f"{track}\n{artist}")
                 self.device_lbl.config(text=f"on {device}")
                 
-                # Sync volume if not dragging
-                if not getattr(self, 'dragging_vol', False) and playback['device']:
-                    server_vol = playback['device']['volume_percent']
-                    # Only update if diff is significant (prevents jitter)
-                    if abs(self.vol_slider.get() - server_vol) > 2:
-                        self.vol_slider.set(server_vol)
+                # No need to sync slider anymore, maybe just update label?
+                # For now, just keeping track/artist is enough.
+                pass
             else:
                 self.track_lbl.config(text="Paused / Idle")
         except Exception: pass
@@ -162,15 +167,26 @@ class SpotifyWidget(tk.Frame):
     def prev_track(self): 
         self._run_async(lambda: self.sp.previous_track() if self.sp else None)
 
-    def on_vol_change(self, val):
-        vol = int(val)
-        self._run_async(lambda: self._set_vol_impl(vol))
+    def vol_up(self):
+        self._change_vol(10)
 
-    def _set_vol_impl(self, vol):
-        if self.sp:
-            try:
-                self.sp.volume(vol)
-            except: pass
+    def vol_down(self):
+        self._change_vol(-10)
+
+    def _change_vol(self, delta):
+        if not self.sp: return
+        self._run_async(lambda: self._vol_change_impl(delta))
+
+    def _vol_change_impl(self, delta):
+        try:
+            # We need current volume first. 
+            # Optimistic update is hard without current state, so we fetch playback
+            pb = self.sp.current_playback()
+            if pb and pb['device']:
+                curr = pb['device']['volume_percent']
+                new_vol = max(0, min(100, curr + delta))
+                self.sp.volume(new_vol)
+        except: pass
 
     def play_selected_playlist(self, event):
         selection = event.widget.curselection()
