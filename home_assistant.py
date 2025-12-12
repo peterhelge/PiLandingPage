@@ -34,7 +34,24 @@ class HAWidget(tk.Frame):
         
         self.update_state()
 
-# ... (rest of methods)
+class HomeAssistantPage(tk.Frame):
+    def __init__(self, parent):
+        super().__init__(parent, bg=config.BG_COLOR)
+        
+        # Header
+        tk.Label(self, text="Home Control", font=config.FONT_LARGE, 
+                 bg=config.BG_COLOR, fg="white").pack(pady=20)
+
+        # Entity Grid Container
+        self.grid_frame = tk.Frame(self, bg=config.BG_COLOR)
+        self.grid_frame.pack(fill="both", expand=True, padx=20, pady=20)
+        
+        if not config.HA_ENTITIES:
+            tk.Label(self.grid_frame, 
+                     text="No Entities Configured.\nAdd HA_ENTITIES to .env", 
+                     font=config.FONT_MED, bg=config.BG_COLOR, fg="gray").pack()
+        else:
+            self.create_widgets()
 
     def create_widgets(self):
         print(f"DEBUG: create_widgets called with {len(config.HA_ENTITIES)} entities")
