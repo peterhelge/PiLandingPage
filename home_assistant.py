@@ -8,50 +8,42 @@ from PIL import Image, ImageTk
 
 class HAWidget(tk.Frame):
     def __init__(self, parent, entity_id):
-        super().__init__(parent, bg="#1E1E1E", highlightthickness=1, highlightbackground="#333")
+        # Transparent background (matches parent), no border
+        super().__init__(parent, bg=config.BG_COLOR, highlightthickness=0)
         self.entity_id = entity_id
         
         # Determine name from ID roughly
         self.friendly_name = entity_id.split(".")[-1].replace("_", " ").title()
         
-        # Load Icons
+        # Load Icons (Larger size: 80x80)
         try:
-            self.icon_on = ImageTk.PhotoImage(Image.open("assets/bulb_on.png").resize((50, 50)))
-            self.icon_off = ImageTk.PhotoImage(Image.open("assets/bulb_off.png").resize((50, 50)))
+            self.icon_on = ImageTk.PhotoImage(Image.open("assets/bulb_on.png").resize((80, 80)))
+            self.icon_off = ImageTk.PhotoImage(Image.open("assets/bulb_off.png").resize((80, 80)))
         except Exception as e:
             print(f"Error loading icons: {e}")
             self.icon_on = None
             self.icon_off = None
-
-        # Name Label
-        self.name_lbl = tk.Label(self, text=self.friendly_name, font=config.FONT_SMALL,
-                                 bg="#1E1E1E", fg="#AAA", anchor="w")
-        self.name_lbl.pack(fill="x", padx=10, pady=(10, 0))
         
         # Icon Container
-        self.icon_lbl = tk.Label(self, bg="#1E1E1E")
-        self.icon_lbl.pack(expand=True)
+        self.icon_lbl = tk.Label(self, bg=config.BG_COLOR)
+        self.icon_lbl.pack(pady=(0, 5))
 
-        # State Text Label (Smaller now)
-        self.state_lbl = tk.Label(self, text="...", font=config.FONT_SMALL,
-                                  bg="#1E1E1E", fg="#888", anchor="center")
-        self.state_lbl.pack(fill="x", padx=10, pady=(0, 10))
+        # Name Label (Centered)
+        self.name_lbl = tk.Label(self, text=self.friendly_name, font=config.FONT_SMALL,
+                                 bg=config.BG_COLOR, fg="#AAA", anchor="center", wraplength=100)
+        self.name_lbl.pack(fill="x")
 
         # Click to Toggle
         self.bind("<Button-1>", self.toggle)
         self.name_lbl.bind("<Button-1>", self.toggle)
         self.icon_lbl.bind("<Button-1>", self.toggle)
-        self.state_lbl.bind("<Button-1>", self.toggle)
         
         self.update_state()
 
     def toggle(self, event=None):
         ha_client.toggle_entity(self.entity_id)
-        # Optimistic update
-        current = self.state_lbl.cget("text")
-        new_state = "Off" if current == "On" else "On"
-        self.state_lbl.config(text=f"{new_state}...")
-        
+        # Optimistic update (Simple color swap simulation if needed, but we wait for update mostly)
+        self.after(200, self.update_state)
         # Force refresh soon
         self.after(2000, self.update_state)
 
@@ -76,11 +68,11 @@ class HAWidget(tk.Frame):
         if state.lower() == "on":
             if self.icon_on:
                 self.icon_lbl.config(image=self.icon_on)
-            self.state_lbl.config(text="On", fg=config.SPOTIFY_GREEN)
+            self.name_lbl.config(fg=config.SPOTIFY_GREEN) # Highlight text too
         else:
             if self.icon_off:
                 self.icon_lbl.config(image=self.icon_off)
-            self.state_lbl.config(text="Off", fg="gray")
+            self.name_lbl.config(fg="#AAA")
                 
 class HomeAssistantPage(tk.Frame):
     def __init__(self, parent):
@@ -88,11 +80,11 @@ class HomeAssistantPage(tk.Frame):
         
         # Header
         tk.Label(self, text="Home Control", font=config.FONT_LARGE, 
-                 bg=config.BG_COLOR, fg="white").pack(pady=20)
+                 bg=config.BG_COLOR, fg="white").pack(pady=30)
 
-        # Entity Grid Container
+        # Entity Grid Container - Centered nicely
         self.grid_frame = tk.Frame(self, bg=config.BG_COLOR)
-        self.grid_frame.pack(fill="both", expand=True, padx=20, pady=20)
+        self.grid_frame.pack(fill="both", expand=True, padx=40)
         
         if not config.HA_ENTITIES:
             tk.Label(self.grid_frame, 
@@ -102,26 +94,26 @@ class HomeAssistantPage(tk.Frame):
             self.create_widgets()
 
     def create_widgets(self):
-        # simple grid layout
-        cols = 3
+        # App Icon Grid Layout
+        cols = 4 # More dense
         for i, entity_id in enumerate(config.HA_ENTITIES):
             try:
                 row = i // cols
                 col = i % cols
                 
-                # Ensure this row expands!
-                self.grid_frame.grid_rowconfigure(row, weight=1)
-
-                # Container for margin
+                # Container for cell (helps centering)
                 frame_container = tk.Frame(self.grid_frame, bg=config.BG_COLOR)
-                frame_container.grid(row=row, column=col, sticky="nsew", padx=10, pady=10)
+                frame_container.grid(row=row, column=col, padx=15, pady=25) # More breathing room around icons
                 
                 # Actual Widget
                 w = HAWidget(frame_container, entity_id=entity_id)
-                w.pack(fill="both", expand=True)
+                w.pack()
             except Exception as e:
                 print(f"Error creating widget: {e}")
 
-        # Configure Grid Weights for columns
-        for i in range(cols):
-            self.grid_frame.grid_columnconfigure(i, weight=1)
+        # Configure Grid Weights so it centers content if few items
+        # OR: Just let them pack to top-left or center. 
+        # For 'App Icon' feel, top-left alignment (like phone) is often preferred, 
+        # but let's center the whole block horizontally if possible.
+        # Current implementation just Grids them. To center whole grid block, we packed grid_frame with fill=both.
+        # Let's simple-grid.
