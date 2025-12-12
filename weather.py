@@ -29,7 +29,7 @@ class WeatherWidget(tk.Frame):
         self.temp_lbl.pack(expand=True)
 
         # Description
-        self.desc_lbl = tk.Label(self, text="...", font=config.FONT_LARGE, 
+        self.desc_lbl = tk.Label(self, text="...", font=config.FONT_MED, 
                                  bg=config.BG_COLOR, fg="gray")
         self.desc_lbl.pack(pady=5)
         

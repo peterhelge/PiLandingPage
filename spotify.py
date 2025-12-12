@@ -35,18 +35,18 @@ class SpotifyWidget(tk.Frame):
         self.device_lbl = tk.Label(self.track_info_frame, text="", font=config.FONT_MED, bg=config.BG_COLOR, fg="gray")
         self.device_lbl.pack()
 
-        # Playback Controls (Enlarged)
+        # Playback Controls (Compacted to fit screen)
         c_frame = tk.Frame(self, bg=config.BG_COLOR)
         c_frame.pack(pady=(10, 5))
 
-        RoundedButton(c_frame, text="<<", command=self.prev_track, width=80, height=60, 
-                      bg_color="#333", hover_color="#444").pack(side="left", padx=10)
+        RoundedButton(c_frame, text="<<", command=self.prev_track, width=65, height=60, 
+                      bg_color="#333", hover_color="#444").pack(side="left", padx=5)
         
-        RoundedButton(c_frame, text="Play", command=self.play_pause, width=120, height=60, 
-                      bg_color=config.SPOTIFY_GREEN, hover_color="#159045").pack(side="left", padx=10)
+        RoundedButton(c_frame, text="Play", command=self.play_pause, width=100, height=60, 
+                      bg_color=config.SPOTIFY_GREEN, hover_color="#159045").pack(side="left", padx=5)
         
-        RoundedButton(c_frame, text=">>", command=self.next_track, width=80, height=60, 
-                      bg_color="#333", hover_color="#444").pack(side="left", padx=10)
+        RoundedButton(c_frame, text=">>", command=self.next_track, width=65, height=60, 
+                      bg_color="#333", hover_color="#444").pack(side="left", padx=5)
 
         # Volume Slider
         v_frame = tk.Frame(self, bg=config.BG_COLOR)

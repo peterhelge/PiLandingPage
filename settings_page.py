@@ -36,9 +36,9 @@ class SettingsPage(tk.Frame):
                       width=350, height=90, bg_color="#C62828", hover_color="#B71C1C", # Slightly Darker Red
                       icon=self.icon_power).pack(pady=15)
 
-        # Reboot Button (Orange)
+        # Reboot Button (Darker Orange for better contrast)
         RoundedButton(btn_frame, text="Reboot System", subtitle="Restart the Raspberry Pi", command=self.reboot, 
-                      width=350, height=90, bg_color="#F9A825", hover_color="#F57F17",
+                      width=350, height=90, bg_color="#E65100", hover_color="#EF6C00",
                       icon=self.icon_reboot).pack(pady=15)
         
         # Exit App Button (Blue/Gray) - Maintenance
