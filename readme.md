@@ -22,6 +22,17 @@ A sleek, touch-friendly smart dashboard designed for the Raspberry Pi 4 and the 
 - **Quick Playlists**: Scrollable list of your top 10 playlists for one-touch playback.
 - **Status**: Polls playback state every 5 seconds.
 
+### 4. 🏠 Home Assistant Control (New!)
+- **Direct Integration**: Talk directly to your Home Assistant instance API.
+- **Interactive Widgets**: graphical lightbulb icons showing live state (Yellow=On, Gray=Off).
+- **Zero Lag**: Native Python implementation means instant response compared to loading web dashboards.
+- **Page 2**: Accessible by swiping left.
+
+### 5. ⚙️ System Settings
+- **Shutdown & Reboot**: Gracefully power off or restart your Pi from the UI.
+- **Exit Kiosk**: Easily close the app for maintenance.
+- **Protection**: Located on Page 3 (Swipe left twice) to prevent accidental clicks.
+
 ---
 
 ## 🛠️ Hardware Requirements
@@ -33,18 +44,21 @@ A sleek, touch-friendly smart dashboard designed for the Raspberry Pi 4 and the 
 
 ## ⚙️ Prerequisites
 
-Before running the code, you need to set up accounts for the APIs.
+Before running the code, you need to set up keys for the APIs.
 
 ### 1. OpenWeatherMap
 1. Sign up at [openweathermap.org](https://openweathermap.org/).
-2. Subscribe to the "One Call API 3.0" (Free tier available, but requires credit card).
-3. Get your **API Key**.
+2. Get your **API Key**.
 
 ### 2. Spotify Developer
 1. Go to the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard/).
-2. Create a new App.
-3. Get your **Client ID** and **Client Secret**.
-4. **Important:** In the app settings, add `http://localhost:8888/callback` to the **Redirect URIs**.
+2. Create a new App to get **Client ID** and **Client Secret**.
+3. **Important:** Add `http://localhost:8888/callback` to the **Redirect URIs**.
+
+### 3. Home Assistant
+1. In Home Assistant, go to your User Profile (bottom left) -> **Security**.
+2. Create a **Long-Lived Access Token**.
+3. Note down the **Entity IDs** you want to control (e.g., `light.living_room`).
 
 ---
 
@@ -54,3 +68,39 @@ Before running the code, you need to set up accounts for the APIs.
 ```bash
 git clone https://github.com/YOUR_USERNAME/PiLandingPage.git
 cd PiLandingPage
+```
+
+### 2. Install Dependencies
+```bash
+# On Raspberry Pi (Bookworm or newer), you might need --break-system-packages
+pip install -r requirements.txt --break-system-packages
+```
+
+### 3. Configure Secrets
+Create a `.env` file in the project folder:
+```bash
+nano .env
+```
+Paste in your keys:
+```bash
+# Weather
+OPENWEATHER_API_KEY=your_key_here
+WEATHER_LAT=59.3293
+WEATHER_LON=18.0686
+
+# Spotify
+SPOTIPY_CLIENT_ID=your_id
+SPOTIPY_CLIENT_SECRET=your_secret
+SPOTIPY_REDIRECT_URI=http://localhost:8888/callback
+
+# Home Assistant
+HA_BASE_URL=http://homeassistant.local:8123
+HA_ACCESS_TOKEN=your_long_token_here
+HA_ENTITIES=light.lamp1,switch.plug2
+```
+
+### 4. Run the App
+To run on the display allowing graphical output from SSH:
+```bash
+DISPLAY=:0 python main.py
+```

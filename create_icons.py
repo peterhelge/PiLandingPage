@@ -45,6 +45,26 @@ def draw_thunder(filename, bg_color="#121212"):
     draw.line(points, fill="#FFEA00", width=4, joint="curve")
     img.save(filename)
 
+def draw_lightbulb(filename, bg_color="#121212", bulb_color="#555555"):
+    img = Image.new("RGBA", (100, 100), bg_color)
+    draw = ImageDraw.Draw(img)
+    
+    # Bulb glass (Circle)
+    draw.ellipse((30, 20, 70, 60), fill=bulb_color)
+    
+    # Bulb base (Rectangle-ish)
+    draw.rectangle((40, 55, 60, 75), fill=bulb_color)
+    
+    # Screw thread (Lines)
+    draw.line((40, 60, 60, 60), fill="#222", width=2)
+    draw.line((40, 65, 60, 65), fill="#222", width=2)
+    draw.line((40, 70, 60, 70), fill="#222", width=2)
+    
+    # Bottom tip
+    draw.pieslice((40, 70, 60, 85), 0, 180, fill="#333")
+    
+    img.save(filename)
+
 def generate_icons():
     print("Generating icons...")
     draw_sun("assets/clear.png")
@@ -53,6 +73,11 @@ def generate_icons():
     draw_snow("assets/snow.png")
     draw_thunder("assets/thunderstorm.png")
     draw_cloud("assets/mist.png", color="#78909C")
+    
+    # Home Assistant Icons
+    draw_lightbulb("assets/bulb_on.png", bulb_color="#FFD700") # Gold/Yellow
+    draw_lightbulb("assets/bulb_off.png", bulb_color="#444444") # Dark Gray
+    
     print("Done. Icons saved to ./assets/")
 
 if __name__ == "__main__":
