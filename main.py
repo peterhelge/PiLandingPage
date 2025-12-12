@@ -7,6 +7,7 @@ from spotify import SpotifyWidget
 import create_icons
 from swipe_container import SwipeableContainer
 from home_assistant import HomeAssistantPage
+from settings_page import SettingsPage
 
 # ... imports ...
 
@@ -67,7 +68,7 @@ class DashboardApp(tk.Tk):
         # ================= LAYOUT =================
         
         # Initialize the Swipe Container with our pages
-        self.container = SwipeableContainer(self, pages=[DashboardPage, HomeAssistantPage])
+        self.container = SwipeableContainer(self, pages=[DashboardPage, HomeAssistantPage, SettingsPage])
         self.container.pack(fill="both", expand=True)
 
 if __name__ == "__main__":
