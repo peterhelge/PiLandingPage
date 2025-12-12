@@ -65,27 +65,31 @@ class RoundedButton(tk.Canvas):
         # Draw Content
         
         if self.icon:
-            # Layout: [ Icon ]  Title
-            #                   Subtitle
-            
-            # Icon centered in left 25% zone
-            icon_center_x = self.width * 0.15
-            self.create_image(icon_center_x, self.height/2, image=self.icon)
-            
-            text_x = self.width * 0.30  # Start text at 30% width
-            
-            if self.subtitle:
-                # Title (Top half)
-                title_font = tkfont.Font(family="Helvetica", size=14, weight="bold")
-                self.create_text(text_x, self.height * 0.35, text=self.text_str, fill=self.fg_color, font=title_font, anchor="w")
-                
-                # Subtitle (Bottom half)
-                sub_font = tkfont.Font(family="Helvetica", size=10)
-                self.create_text(text_x, self.height * 0.65, text=self.subtitle, fill="#DDDDDD", font=sub_font, anchor="w")
+            if not self.text_str and not self.subtitle:
+                # Icon ONLY -> Center it completely
+                self.create_image(self.width / 2, self.height / 2, image=self.icon)
             else:
-                # Centered Title (Vertically)
-                font = tkfont.Font(family="Helvetica", size=12, weight="bold")
-                self.create_text(text_x, self.height / 2, text=self.text_str, fill=self.fg_color, font=font, anchor="w")
+                # Layout: [ Icon ]  Title
+                #                   Subtitle
+                
+                # Icon centered in left 15% zone (approx)
+                icon_center_x = self.width * 0.15
+                self.create_image(icon_center_x, self.height/2, image=self.icon)
+                
+                text_x = self.width * 0.30  # Start text at 30% width
+                
+                if self.subtitle:
+                    # Title (Top half)
+                    title_font = tkfont.Font(family="Helvetica", size=14, weight="bold")
+                    self.create_text(text_x, self.height * 0.35, text=self.text_str, fill=self.fg_color, font=title_font, anchor="w")
+                    
+                    # Subtitle (Bottom half)
+                    sub_font = tkfont.Font(family="Helvetica", size=10)
+                    self.create_text(text_x, self.height * 0.65, text=self.subtitle, fill="#DDDDDD", font=sub_font, anchor="w")
+                else:
+                    # Centered Title (Vertically)
+                    font = tkfont.Font(family="Helvetica", size=12, weight="bold")
+                    self.create_text(text_x, self.height / 2, text=self.text_str, fill=self.fg_color, font=font, anchor="w")
                 
         else:
             # Text Only (Centered)

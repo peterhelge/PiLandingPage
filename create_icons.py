@@ -120,7 +120,7 @@ def draw_exit(filename, bg_color="#121212", fg_color="#90A4AE"):
     draw.polygon([(80, 40), (95, 50), (80, 60)], fill=fg_color)
     img.save(filename)
 
-def draw_vol_down(filename, bg_color="#121212", fg_color="white"):
+def draw_vol_down(filename, bg_color=(0, 0, 0, 0), fg_color="white"):
     img = Image.new("RGBA", (100, 100), bg_color)
     draw = ImageDraw.Draw(img)
     # Speaker body
@@ -129,7 +129,7 @@ def draw_vol_down(filename, bg_color="#121212", fg_color="white"):
     draw.arc((40, 40, 70, 60), 300, 60, fill=fg_color, width=4)
     img.save(filename)
 
-def draw_vol_up(filename, bg_color="#121212", fg_color="white"):
+def draw_vol_up(filename, bg_color=(0, 0, 0, 0), fg_color="white"):
     img = Image.new("RGBA", (100, 100), bg_color)
     draw = ImageDraw.Draw(img)
     # Speaker body
