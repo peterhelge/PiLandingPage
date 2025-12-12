@@ -79,6 +79,8 @@ class HomeAssistantPage(tk.Frame):
         self.grid_frame = tk.Frame(self, bg=config.BG_COLOR)
         self.grid_frame.pack(fill="both", expand=True, padx=20, pady=20)
 
+        print(f"DEBUG: HA_ENTITIES = {config.HA_ENTITIES}") # Debugging
+
         if not config.HA_ENTITIES:
             tk.Label(self.grid_frame, 
                      text="No Entities Configured.\nAdd HA_ENTITIES to .env", 
