@@ -78,7 +78,13 @@ class SettingsPage(tk.Frame):
         
         # Make it modal
         editor.transient(self)
-        editor.grab_set()
+        try:
+            # Wait for window to be viewable before grabbing input
+            # This handles the "grab failed: window not viewable" error
+            editor.wait_visibility()
+            editor.grab_set()
+        except Exception as e:
+            print(f"Warning: Could not grab focus immediately: {e}")
 
         # Header
         tk.Label(editor, text="Edit .env File", font=config.FONT_LARGE, 
