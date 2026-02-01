@@ -52,7 +52,7 @@ class SwipeableContainer(tk.Frame):
     # --- EVENT HANDLERS ---
     
     def on_touch_start(self, event):
-        self.start_x = event.x
+        self.start_x = event.x_root
 
     def on_touch_move(self, event):
         # We can detect "dragging" here if we want continuous feedback,
@@ -62,7 +62,7 @@ class SwipeableContainer(tk.Frame):
     def on_touch_end(self, event):
         if self.start_x is None: return
         
-        end_x = event.x
+        end_x = event.x_root
         diff_x = end_x - self.start_x
         
         # Reset start
