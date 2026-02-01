@@ -99,7 +99,30 @@ def generate_icons():
     draw_vol_down("assets/vol_down.png")
     draw_vol_up("assets/vol_up.png")
     
+    # Sensor Icons
+    draw_thermometer("assets/thermometer.png")
+    draw_humidity("assets/humidity.png")
+    
     print("Done. Icons saved to ./assets/")
+
+def draw_thermometer(filename, bg_color=(0, 0, 0, 0), fg_color="#FF7043"):
+    img = Image.new("RGBA", (100, 100), bg_color)
+    draw = ImageDraw.Draw(img)
+    # Bulb
+    draw.ellipse((35, 65, 65, 95), fill=fg_color)
+    # Stem
+    draw.rectangle((42, 10, 58, 70), fill=fg_color)
+    # White highlight inside
+    draw.rectangle((48, 20, 52, 60), fill="white")
+    img.save(filename)
+
+def draw_humidity(filename, bg_color=(0, 0, 0, 0), fg_color="#4FC3F7"):
+    img = Image.new("RGBA", (100, 100), bg_color)
+    draw = ImageDraw.Draw(img)
+    # Droplet shape (Circle + Triangle)
+    draw.ellipse((25, 45, 75, 95), fill=fg_color)
+    draw.polygon([(50, 10), (28, 55), (72, 55)], fill=fg_color)
+    img.save(filename)
 
 def draw_reboot(filename, bg_color="#121212", fg_color="#FDD835"):
     img = Image.new("RGBA", (100, 100), bg_color)
