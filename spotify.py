@@ -97,13 +97,24 @@ class SpotifyWidget(tk.Frame):
         return None
 
     def load_playlists(self):
-        if not self.sp: return
+        # Run in background to avoid freezing startup
+        import threading
+        if self.sp:
+             threading.Thread(target=self._fetch_playlists, daemon=True).start()
+
+    def _fetch_playlists(self):
         try:
             results = self.sp.current_user_playlists(limit=20)
-            for item in results['items']:
-                self.playlists.append((item['name'], item['uri']))
-                self.playlist_box.insert(tk.END, f" {item['name']}")
-        except Exception: pass
+            # Update UI on Main Thread
+            self.after(0, lambda: self._update_playlist_ui(results))
+        except Exception as e: 
+            print(f"Error fetching playlists: {e}")
+
+    def _update_playlist_ui(self, results):
+        if not results: return
+        for item in results['items']:
+            self.playlists.append((item['name'], item['uri']))
+            self.playlist_box.insert(tk.END, f" {item['name']}")
 
     def check_playback(self):
         # Poll in a background thread
