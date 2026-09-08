@@ -13,3 +13,6 @@ __pycache__/
 
 # OS System Files
 .DS_Store
+
+# Todo screen local state + history (personal data, not for version control)
+todo_data/

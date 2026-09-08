@@ -1,6 +1,7 @@
 import tkinter as tk
 import config
 from components import RoundedButton
+from pomodoro_engine import PomodoroEngine
 from datetime import datetime
 import locale
 
@@ -15,23 +16,19 @@ class PomodoroWidget(tk.Frame):
         super().__init__(parent, bg=config.BG_COLOR, bd=0)
         self.pack(side="left", fill="both", expand=True, padx=20, pady=20)
 
-        self.state = "STOPPED"
-        self.timer_mode = "FOCUS" # FOCUS or BREAK
-        self.pomodoro_count = 0
-        self.minutes = 25
-        self.seconds = 0
-        
+        self.engine = PomodoroEngine(self, on_tick=self._on_tick, on_phase_change=self._on_phase_change)
+
         # ================= REAL TIME CLOCK =================
-        
+
         # ================= REAL TIME CLOCK =================
-        
+
         # 1. Time Label (Big, Bright)
-        self.clock_lbl = tk.Label(self, text="--:--", font=("Verdana", 45, "bold"), 
+        self.clock_lbl = tk.Label(self, text="--:--", font=("Verdana", 45, "bold"),
                                   bg=config.BG_COLOR, fg="white")
         self.clock_lbl.pack(pady=(0, 0))
-        
+
         # 2. Date Label (Smaller, Modern Grey)
-        self.date_lbl = tk.Label(self, text="...", font=("Verdana", 14), 
+        self.date_lbl = tk.Label(self, text="...", font=("Verdana", 14),
                                  bg=config.BG_COLOR, fg="#888888")
         self.date_lbl.pack(pady=(0, 20)) # 20px gap before the focus timer starts
 
@@ -41,120 +38,87 @@ class PomodoroWidget(tk.Frame):
         tk.Frame(self, height=2, bg=config.DIVIDER_COLOR, width=200).pack(pady=10)
 
         # Title (Blue)
-        self.title_lbl = tk.Label(self, text="Focus Timer", font=config.FONT_MED, 
+        self.title_lbl = tk.Label(self, text="Focus Timer", font=config.FONT_MED,
                  bg=config.BG_COLOR, fg=config.POMODORO_BLUE)
         self.title_lbl.pack(pady=(20,5))
-        
+
         # Status Text
-        self.status_lbl = tk.Label(self, text="Ready", font=config.FONT_LARGE, 
+        self.status_lbl = tk.Label(self, text="Ready", font=config.FONT_LARGE,
                                    bg=config.BG_COLOR, fg="gray")
         self.status_lbl.pack(pady=5)
 
         # Countdown Numbers
-        self.time_lbl = tk.Label(self, text=f"{self.minutes:02d}:{self.seconds:02d}", 
-                                 font=("Verdana", 80, "bold"), 
+        self.time_lbl = tk.Label(self, text=f"{self.engine.minutes:02d}:{self.engine.seconds:02d}",
+                                 font=("Verdana", 80, "bold"),
                                  bg=config.BG_COLOR, fg=config.POMODORO_BLUE)
         self.time_lbl.pack(expand=True)
-        
+
         # Button Container
         btn_frame = tk.Frame(self, bg=config.BG_COLOR)
         btn_frame.pack(pady=30)
 
         # Buttons
-        RoundedButton(btn_frame, text="Start", command=self.start_timer, 
+        RoundedButton(btn_frame, text="Start", command=self.start_timer,
                       width=120, height=65, bg_color="#333").pack(side="left", padx=10)
-        
-        RoundedButton(btn_frame, text="Pause", command=self.pause_timer, 
+
+        RoundedButton(btn_frame, text="Pause", command=self.pause_timer,
                       width=120, height=65, bg_color="#333").pack(side="left", padx=10)
-        
-        RoundedButton(btn_frame, text="Reset", command=self.reset_timer, 
+
+        RoundedButton(btn_frame, text="Reset", command=self.reset_timer,
                       width=120, height=65, bg_color="#333").pack(side="left", padx=10)
-        
+
         # Start the clock loop
         self.update_clock()
 
     def update_clock(self):
         """Updates the real-time clock every second"""
         now = datetime.now()
-        
+
         # 24-Hour Format (HH:MM)
         current_time = now.strftime("%H:%M")
-        
+
         # Date Format (e.g., "Thu 20 Nov")
         current_date = now.strftime("%a %d %b")
-        
+
         # Update Labels
         if self.clock_lbl.cget("text") != current_time:
             self.clock_lbl.config(text=current_time)
-        
+
         if self.date_lbl.cget("text") != current_date:
             self.date_lbl.config(text=current_date)
 
         # Schedule next update (every 1 second)
         self.after(1000, self.update_clock)
 
-    def update_timer(self):
-        if self.state == "RUNNING":
-            if self.seconds == 0:
-                if self.minutes == 0:
-                    # Timer Finished a Cycle
-                    if self.timer_mode == "FOCUS":
-                        self.pomodoro_count += 1
-                        
-                        if self.pomodoro_count % 4 == 0:
-                             # LONG BREAK (15 min)
-                            self.timer_mode = "BREAK"
-                            self.minutes = 15
-                            self.seconds = 0
-                            self.status_lbl.config(text="Long Break 🏖️", fg="#00E676") # Bright Green
-                            self.title_lbl.config(text="Recharge (15m)", fg="#00E676")
-                            self.time_lbl.config(fg="#00E676")
-                        else:
-                            # SHORT BREAK (5 min)
-                            self.timer_mode = "BREAK"
-                            self.minutes = 5
-                            self.seconds = 0
-                            self.status_lbl.config(text="Short Break ☕", fg=config.BRAND_GREEN if hasattr(config, 'BRAND_GREEN') else "green")
-                            self.title_lbl.config(text="Break Time", fg="green")
-                            self.time_lbl.config(fg="green")
-                    else:
-                        # Switch back to Focus
-                        self.timer_mode = "FOCUS"
-                        self.minutes = 25
-                        self.seconds = 0
-                        self.status_lbl.config(text=f"Focus Session #{self.pomodoro_count + 1} 🎯", fg=config.FG_COLOR)
-                        self.title_lbl.config(text="Focus Timer", fg=config.POMODORO_BLUE)
-                        self.time_lbl.config(fg=config.POMODORO_BLUE)
-                    
-                    # Continue running (Auto-start next phase)
-                    self.update_timer()
-                    return 
-                    
-                self.minutes -= 1
-                self.seconds = 59
-            else:
-                self.seconds -= 1
-            
-            self.time_lbl.config(text=f"{self.minutes:02d}:{self.seconds:02d}")
-            self.after(1000, self.update_timer)
+    def _on_tick(self, minutes, seconds, mode):
+        self.time_lbl.config(text=f"{minutes:02d}:{seconds:02d}")
+
+    def _on_phase_change(self, mode, phase_label, count):
+        if phase_label == "long_break":
+            self.status_lbl.config(text="Long Break 🏖️", fg="#00E676") # Bright Green
+            self.title_lbl.config(text="Recharge (15m)", fg="#00E676")
+            self.time_lbl.config(fg="#00E676")
+        elif phase_label == "short_break":
+            self.status_lbl.config(text="Short Break ☕", fg=config.BRAND_GREEN if hasattr(config, 'BRAND_GREEN') else "green")
+            self.title_lbl.config(text="Break Time", fg="green")
+            self.time_lbl.config(fg="green")
+        else:
+            self.status_lbl.config(text=f"Focus Session #{count + 1} 🎯", fg=config.FG_COLOR)
+            self.title_lbl.config(text="Focus Timer", fg=config.POMODORO_BLUE)
+            self.time_lbl.config(fg=config.POMODORO_BLUE)
 
     def start_timer(self):
-        if self.state != "RUNNING":
-            self.state = "RUNNING"
-            msg = "Focusing..." if self.timer_mode == "FOCUS" else "Relaxing..."
+        if self.engine.state != "RUNNING":
+            msg = "Focusing..." if self.engine.timer_mode == "FOCUS" else "Relaxing..."
             self.status_lbl.config(text=msg, fg=config.FG_COLOR)
-            self.update_timer()
+            self.engine.start()
 
     def pause_timer(self):
-        self.state = "PAUSED"
+        self.engine.pause()
         self.status_lbl.config(text="Paused", fg="orange")
 
     def reset_timer(self):
-        self.state = "STOPPED"
-        self.timer_mode = "FOCUS"
-        self.pomodoro_count = 0 
-        self.minutes = 25
-        self.seconds = 0
-        self.time_lbl.config(text=f"{self.minutes:02d}:{self.seconds:02d}", fg=config.POMODORO_BLUE)
+        self.engine.reset()
+        self.time_lbl.config(text=f"{self.engine.minutes:02d}:{self.engine.seconds:02d}", fg=config.POMODORO_BLUE)
         self.title_lbl.config(text="Focus Timer", fg=config.POMODORO_BLUE)
         self.status_lbl.config(text="Ready", fg="gray")

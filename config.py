@@ -40,3 +40,17 @@ HA_ACCESS_TOKEN = os.getenv("HA_ACCESS_TOKEN")
 # Comma separated string in .env, converted to list here
 _ha_entities_str = os.getenv("HA_ENTITIES", "")
 HA_ENTITIES = [e.strip() for e in _ha_entities_str.split(",") if e.strip()]
+
+# --- GOOGLE KEEP (Today's Todo sync) ---
+GOOGLE_KEEP_EMAIL = os.getenv("GOOGLE_KEEP_EMAIL")
+GOOGLE_KEEP_MASTER_TOKEN = os.getenv("GOOGLE_KEEP_MASTER_TOKEN")
+GOOGLE_KEEP_MAJOR_NOTE_TITLE = os.getenv("GOOGLE_KEEP_MAJOR_NOTE_TITLE", "Today - Major")
+GOOGLE_KEEP_MINOR_NOTE_TITLE = os.getenv("GOOGLE_KEEP_MINOR_NOTE_TITLE", "Today - Minor")
+GOOGLE_KEEP_SYNC_INTERVAL_MS = int(os.getenv("GOOGLE_KEEP_SYNC_INTERVAL_MS", "120000"))
+
+# --- TODO SCREEN ---
+TODO_MAX_MAJOR = int(os.getenv("TODO_MAX_MAJOR", "4"))
+TODO_MAX_MINOR = int(os.getenv("TODO_MAX_MINOR", "8"))
+TODO_DATA_DIR = os.getenv("TODO_DATA_DIR", "todo_data")
+TODO_ACCENT = "#00BFA5"    # Teal, distinct from SPOTIFY_GREEN/POMODORO_BLUE/WEATHER_YELLOW
+TODO_DONE_COLOR = "#555555"

@@ -35,11 +35,18 @@ class SwipeableContainer(tk.Frame):
 
     def show_page(self, index):
         if 0 <= index < len(self.pages):
+            old_index = self.current_page_index
+            if old_index != index and 0 <= old_index < len(self.pages):
+                old_page = self.pages[old_index]
+                if hasattr(old_page, "on_page_hidden"):
+                    old_page.on_page_hidden()
+
             self.current_page_index = index
             page = self.pages[index]
             page.tkraise()
-            
-            # Optional: Visual feedback or animation hook could go here
+
+            if hasattr(page, "on_page_shown"):
+                page.on_page_shown()
 
     def next_page(self):
         new_index = (self.current_page_index + 1) % len(self.pages)

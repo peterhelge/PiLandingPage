@@ -8,6 +8,7 @@ import create_icons
 from swipe_container import SwipeableContainer
 from home_assistant import HomeAssistantPage
 from settings_page import SettingsPage
+from todo_page import TodoPage
 
 # ... imports ...
 
@@ -68,7 +69,7 @@ class DashboardApp(tk.Tk):
         # ================= LAYOUT =================
         
         # Initialize the Swipe Container with our pages
-        self.container = SwipeableContainer(self, pages=[DashboardPage, HomeAssistantPage, SettingsPage])
+        self.container = SwipeableContainer(self, pages=[DashboardPage, TodoPage, HomeAssistantPage, SettingsPage])
         self.container.pack(fill="both", expand=True)
 
 if __name__ == "__main__":

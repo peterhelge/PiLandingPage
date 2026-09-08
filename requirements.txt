@@ -2,3 +2,4 @@ requests
 spotipy
 pillow
 python-dotenv
+gkeepapi==0.17.1
