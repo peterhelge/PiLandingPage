@@ -5,7 +5,7 @@ from datetime import date, datetime
 import config
 import todo_store
 from components import RoundedButton
-from keep_sync import keep_sync, KeepSyncError
+from todoist_sync import todoist_sync, TodoistSyncError
 from pomodoro_engine import PomodoroEngine
 
 
@@ -194,6 +194,7 @@ class TodoPage(tk.Frame):
 
         self.after(500, lambda: self.trigger_sync())
         self.after(60000, self._heartbeat)
+        self.after(config.TODOIST_SYNC_INTERVAL_MS, self._sync_heartbeat)
 
     # ---------------- header ----------------
 
@@ -279,6 +280,10 @@ class TodoPage(tk.Frame):
         self._check_rollover()
         self.after(60000, self._heartbeat)
 
+    def _sync_heartbeat(self):
+        self.trigger_sync()
+        self.after(config.TODOIST_SYNC_INTERVAL_MS, self._sync_heartbeat)
+
     def _check_rollover(self):
         if self.state.get("date") != date.today().isoformat():
             self.timer_panel.clear_active()
@@ -292,8 +297,8 @@ class TodoPage(tk.Frame):
     def trigger_sync(self, manual=False):
         if self._sync_in_progress:
             return
-        if not config.GOOGLE_KEEP_EMAIL or not config.GOOGLE_KEEP_MASTER_TOKEN:
-            self.state["last_sync_error"] = "Google Keep not configured"
+        if not config.TODOIST_API_TOKEN:
+            self.state["last_sync_error"] = "Todoist not configured"
             self._update_sync_status_label()
             return
         self._sync_in_progress = True
@@ -302,10 +307,10 @@ class TodoPage(tk.Frame):
 
     def _sync_worker(self):
         try:
-            keep_sync.sync(self.state)
+            todoist_sync.sync(self.state)
             todo_store.save_state(self.state)
             self.after(0, self._on_sync_done)
-        except KeepSyncError:
+        except TodoistSyncError:
             todo_store.save_state(self.state)
             self.after(0, self._on_sync_done)
 
@@ -371,7 +376,7 @@ class TodoPage(tk.Frame):
                                 is_active=(task["id"] == active_id))
             row.pack(anchor="w", pady=4)
         overflow = self.state.get("major_overflow_count", 0)
-        self.major_overflow_lbl.config(text=f"+{overflow} more in Keep" if overflow else "")
+        self.major_overflow_lbl.config(text=f"+{overflow} more in Todoist" if overflow else "")
 
         for child in self.minor_list.winfo_children():
             child.destroy()
@@ -379,7 +384,7 @@ class TodoPage(tk.Frame):
             row = MinorTaskRow(self.minor_list, task, on_toggle=lambda tid: self.on_toggle_done("minor_tasks", tid))
             row.pack(anchor="w")
         overflow = self.state.get("minor_overflow_count", 0)
-        self.minor_overflow_lbl.config(text=f"+{overflow} more in Keep" if overflow else "")
+        self.minor_overflow_lbl.config(text=f"+{overflow} more in Todoist" if overflow else "")
 
     # ---------------- rendering: history ----------------
 

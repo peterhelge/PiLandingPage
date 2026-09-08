@@ -41,12 +41,11 @@ HA_ACCESS_TOKEN = os.getenv("HA_ACCESS_TOKEN")
 _ha_entities_str = os.getenv("HA_ENTITIES", "")
 HA_ENTITIES = [e.strip() for e in _ha_entities_str.split(",") if e.strip()]
 
-# --- GOOGLE KEEP (Today's Todo sync) ---
-GOOGLE_KEEP_EMAIL = os.getenv("GOOGLE_KEEP_EMAIL")
-GOOGLE_KEEP_MASTER_TOKEN = os.getenv("GOOGLE_KEEP_MASTER_TOKEN")
-GOOGLE_KEEP_MAJOR_NOTE_TITLE = os.getenv("GOOGLE_KEEP_MAJOR_NOTE_TITLE", "Today - Major")
-GOOGLE_KEEP_MINOR_NOTE_TITLE = os.getenv("GOOGLE_KEEP_MINOR_NOTE_TITLE", "Today - Minor")
-GOOGLE_KEEP_SYNC_INTERVAL_MS = int(os.getenv("GOOGLE_KEEP_SYNC_INTERVAL_MS", "120000"))
+# --- TODOIST (Today's Todo sync) ---
+TODOIST_API_TOKEN = os.getenv("TODOIST_API_TOKEN")
+TODOIST_MAJOR_PROJECT_NAME = os.getenv("TODOIST_MAJOR_PROJECT_NAME", "Today - Major")
+TODOIST_MINOR_PROJECT_NAME = os.getenv("TODOIST_MINOR_PROJECT_NAME", "Today - Minor")
+TODOIST_SYNC_INTERVAL_MS = int(os.getenv("TODOIST_SYNC_INTERVAL_MS", "120000"))
 
 # --- TODO SCREEN ---
 TODO_MAX_MAJOR = int(os.getenv("TODO_MAX_MAJOR", "4"))

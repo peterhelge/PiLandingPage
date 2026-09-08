@@ -2,4 +2,4 @@ requests
 spotipy
 pillow
 python-dotenv
-gkeepapi==0.17.1
+todoist-api-python==4.0.0
