@@ -12,8 +12,12 @@ from todo_page import TodoPage
 
 # ... imports ...
 
-# Check for assets and generate if missing
-if not os.path.exists("assets") or not os.listdir("assets"):
+# Check for assets and generate if missing (or if new icons were added since
+# assets/ was last generated - generate_icons() is idempotent/deterministic,
+# so re-running it is safe even when most icons already exist).
+_required_icons = ["assets/clear.png", "assets/play.png", "assets/pause.png",
+                    "assets/prev_track.png", "assets/next_track.png"]
+if not os.path.exists("assets") or not all(os.path.exists(p) for p in _required_icons):
     create_icons.generate_icons()
 
 class DashboardPage(tk.Frame):

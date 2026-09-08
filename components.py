@@ -104,14 +104,16 @@ class RoundedButton(tk.Canvas):
             font = tkfont.Font(family="Helvetica", size=12)
             self.create_text(self.width / 2, self.height / 2, text=self.text_str, fill=self.fg_color, font=font)
 
-    def set_text(self, text=None, subtitle=None, bg_color=None):
-        """Updates the button's label/subtitle/color in place and redraws."""
+    def set_text(self, text=None, subtitle=None, bg_color=None, icon=None):
+        """Updates the button's label/subtitle/color/icon in place and redraws."""
         if text is not None:
             self.text_str = text
         if subtitle is not None:
             self.subtitle = subtitle
         if bg_color is not None:
             self.bg_color = bg_color
+        if icon is not None:
+            self.icon = icon
         self._draw(self.bg_color)
 
     def _on_click(self, event):

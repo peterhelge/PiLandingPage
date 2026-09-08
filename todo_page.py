@@ -45,7 +45,7 @@ class CircleCheckbox(tk.Canvas):
 
 class MajorTaskRow(tk.Frame):
     def __init__(self, parent, task, on_toggle=None, on_select=None, is_active=False, read_only=False):
-        super().__init__(parent, bg=config.TODO_SURFACE_COLOR)
+        super().__init__(parent, bg=config.SURFACE_COLOR)
         done = task.get("done", False)
 
         checkbox_cmd = (lambda: on_toggle(task["id"])) if (on_toggle and not read_only) else None
@@ -62,7 +62,7 @@ class MajorTaskRow(tk.Frame):
         else:
             subtitle = None
 
-        body_bg = config.TODO_ACCENT if is_active else config.TODO_SURFACE_COLOR
+        body_bg = config.TODO_ACCENT if is_active else config.SURFACE_COLOR
         text_fg = "#666666" if done else "white"
         body_cmd = (lambda: on_select(task["id"], task["text"])) if (on_select and not read_only) else None
         body = RoundedButton(
@@ -75,7 +75,7 @@ class MajorTaskRow(tk.Frame):
 
 class MinorTaskRow(tk.Frame):
     def __init__(self, parent, task, on_toggle=None, read_only=False):
-        super().__init__(parent, bg=config.TODO_SURFACE_COLOR)
+        super().__init__(parent, bg=config.SURFACE_COLOR)
         done = task.get("done", False)
         cmd = (lambda: on_toggle(task["id"])) if (on_toggle and not read_only) else None
 
@@ -84,7 +84,7 @@ class MinorTaskRow(tk.Frame):
 
         text_fg = "#666666" if done else "white"
         font = ("Verdana", 12, "overstrike") if done else ("Verdana", 12)
-        lbl = tk.Label(self, text=task["text"], font=font, bg=config.TODO_SURFACE_COLOR, fg=text_fg, anchor="w")
+        lbl = tk.Label(self, text=task["text"], font=font, bg=config.SURFACE_COLOR, fg=text_fg, anchor="w")
         lbl.pack(side="left", fill="x", expand=True, padx=(0, 12), pady=9)
 
         if cmd:
@@ -101,7 +101,7 @@ class TaskTimerPanel(tk.Frame):
     PHASE_COLORS = {"focus": None, "short_break": "#66BB6A", "long_break": "#00E676"}  # None = TODO_ACCENT
 
     def __init__(self, parent, on_session=None, on_active_changed=None):
-        super().__init__(parent, bg=config.TODO_SURFACE_COLOR)
+        super().__init__(parent, bg=config.SURFACE_COLOR)
         self.on_session = on_session
         self.on_active_changed = on_active_changed
         self.active_task_id = None
@@ -112,18 +112,18 @@ class TaskTimerPanel(tk.Frame):
                                       on_focus_complete=self._on_focus_complete)
 
         self.task_lbl = tk.Label(self, text="No active task", font=("Verdana", 14, "bold"),
-                                  bg=config.TODO_SURFACE_COLOR, fg=config.FG_COLOR)
+                                  bg=config.SURFACE_COLOR, fg=config.FG_COLOR)
         self.task_lbl.pack(pady=(18, 2))
 
         self.phase_lbl = tk.Label(self, text="Tap a task to start focusing", font=("Verdana", 11),
-                                   bg=config.TODO_SURFACE_COLOR, fg="#777777")
+                                   bg=config.SURFACE_COLOR, fg="#777777")
         self.phase_lbl.pack(pady=(0, 8))
 
         self.time_lbl = tk.Label(self, text=f"{self.engine.minutes:02d}:{self.engine.seconds:02d}",
-                                  font=("Verdana", 52, "bold"), bg=config.TODO_SURFACE_COLOR, fg=config.TODO_ACCENT)
+                                  font=("Verdana", 52, "bold"), bg=config.SURFACE_COLOR, fg=config.TODO_ACCENT)
         self.time_lbl.pack(pady=6)
 
-        btn_frame = tk.Frame(self, bg=config.TODO_SURFACE_COLOR)
+        btn_frame = tk.Frame(self, bg=config.SURFACE_COLOR)
         btn_frame.pack(pady=(6, 18))
         self.pause_btn = RoundedButton(btn_frame, text="Pause", command=self._toggle_pause, width=90, height=42,
                                         bg_color="#2A2A2A")

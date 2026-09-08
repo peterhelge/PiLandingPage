@@ -53,4 +53,4 @@ TODO_MAX_MINOR = int(os.getenv("TODO_MAX_MINOR", "8"))
 TODO_DATA_DIR = os.getenv("TODO_DATA_DIR", "todo_data")
 TODO_ACCENT = "#00BFA5"    # Teal, distinct from SPOTIFY_GREEN/POMODORO_BLUE/WEATHER_YELLOW
 TODO_DONE_COLOR = "#2A2A2A"
-TODO_SURFACE_COLOR = "#1A1A1A"   # Card background, one step up from BG_COLOR
+SURFACE_COLOR = "#1A1A1A"   # Card background, one step up from BG_COLOR

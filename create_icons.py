@@ -98,6 +98,12 @@ def generate_icons():
     # Volume Icons
     draw_vol_down("assets/vol_down.png")
     draw_vol_up("assets/vol_up.png")
+
+    # Playback Icons
+    draw_play("assets/play.png")
+    draw_pause("assets/pause.png")
+    draw_prev_track("assets/prev_track.png")
+    draw_next_track("assets/next_track.png")
     
     # Sensor Icons
     draw_thermometer("assets/thermometer.png")
@@ -161,6 +167,33 @@ def draw_vol_up(filename, bg_color=(0, 0, 0, 0), fg_color="white"):
     draw.arc((40, 40, 70, 60), 300, 60, fill=fg_color, width=4)
     draw.arc((30, 30, 80, 70), 300, 60, fill=fg_color, width=4)
     draw.arc((20, 20, 90, 80), 300, 60, fill=fg_color, width=4)
+    img.save(filename)
+
+def draw_play(filename, bg_color=(0, 0, 0, 0), fg_color="white"):
+    img = Image.new("RGBA", (100, 100), bg_color)
+    draw = ImageDraw.Draw(img)
+    draw.polygon([(30, 18), (30, 82), (82, 50)], fill=fg_color)
+    img.save(filename)
+
+def draw_pause(filename, bg_color=(0, 0, 0, 0), fg_color="white"):
+    img = Image.new("RGBA", (100, 100), bg_color)
+    draw = ImageDraw.Draw(img)
+    draw.rectangle((24, 20, 44, 80), fill=fg_color)
+    draw.rectangle((56, 20, 76, 80), fill=fg_color)
+    img.save(filename)
+
+def draw_prev_track(filename, bg_color=(0, 0, 0, 0), fg_color="white"):
+    img = Image.new("RGBA", (100, 100), bg_color)
+    draw = ImageDraw.Draw(img)
+    draw.polygon([(52, 20), (52, 80), (20, 50)], fill=fg_color)
+    draw.polygon([(82, 20), (82, 80), (50, 50)], fill=fg_color)
+    img.save(filename)
+
+def draw_next_track(filename, bg_color=(0, 0, 0, 0), fg_color="white"):
+    img = Image.new("RGBA", (100, 100), bg_color)
+    draw = ImageDraw.Draw(img)
+    draw.polygon([(48, 20), (48, 80), (80, 50)], fill=fg_color)
+    draw.polygon([(18, 20), (18, 80), (50, 50)], fill=fg_color)
     img.save(filename)
 
 if __name__ == "__main__":
