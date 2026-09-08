@@ -17,40 +17,79 @@ def _minutes_logged(task):
     return sum(s.get("duration_seconds", 0) for s in task.get("sessions", [])) // 60
 
 
+class CircleCheckbox(tk.Canvas):
+    """A true circular checkbox - deliberately a different shape from the
+    rectangular task cards, so it reads unambiguously as "tap to check off"
+    versus "tap to act on this task"."""
+
+    def __init__(self, parent, done=False, command=None, size=40):
+        super().__init__(parent, width=size, height=size, bg=parent["bg"], highlightthickness=0)
+        self.size = size
+        self.done = done
+        self.command = command
+        self._draw()
+        if command:
+            self.bind("<Button-1>", lambda e: command())
+
+    def _draw(self):
+        self.delete("all")
+        s = self.size
+        pad = 3
+        if self.done:
+            self.create_oval(pad, pad, s - pad, s - pad, fill=config.SPOTIFY_GREEN, outline=config.SPOTIFY_GREEN)
+            self.create_line(s * 0.27, s * 0.52, s * 0.43, s * 0.68, s * 0.75, s * 0.30,
+                              fill="white", width=max(2, s // 14), capstyle="round", joinstyle="round")
+        else:
+            self.create_oval(pad, pad, s - pad, s - pad, outline="#5A5A5A", width=3)
+
+
 class MajorTaskRow(tk.Frame):
     def __init__(self, parent, task, on_toggle=None, on_select=None, is_active=False, read_only=False):
-        super().__init__(parent, bg=config.BG_COLOR)
+        super().__init__(parent, bg=config.TODO_SURFACE_COLOR)
         done = task.get("done", False)
 
         checkbox_cmd = (lambda: on_toggle(task["id"])) if (on_toggle and not read_only) else None
-        checkbox = RoundedButton(
-            self, text=("✓" if done else "○"), command=checkbox_cmd,
-            width=55, height=80,
-            bg_color=(config.SPOTIFY_GREEN if done else "#333333"),
-            fg_color="white",
-        )
-        checkbox.pack(side="left", padx=(0, 10))
+        checkbox = CircleCheckbox(self, done=done, command=checkbox_cmd, size=38)
+        checkbox.pack(side="left", padx=(14, 10), pady=13)
 
-        subtitle = "Done" if done else f"{_minutes_logged(task)}m today"
-        body_bg = config.TODO_DONE_COLOR if done else (config.TODO_ACCENT if is_active else config.POMODORO_BLUE)
+        minutes = _minutes_logged(task)
+        if done:
+            subtitle = "Done"
+        elif is_active:
+            subtitle = "Focusing now"
+        elif minutes:
+            subtitle = f"{minutes}m logged"
+        else:
+            subtitle = None
+
+        body_bg = config.TODO_ACCENT if is_active else config.TODO_SURFACE_COLOR
+        text_fg = "#666666" if done else "white"
         body_cmd = (lambda: on_select(task["id"], task["text"])) if (on_select and not read_only) else None
         body = RoundedButton(
             self, text=task["text"], subtitle=subtitle, command=body_cmd,
-            width=330, height=80,
-            bg_color=body_bg, hover_color=body_bg, fg_color="white",
+            width=270, height=64, corner_radius=10,
+            bg_color=body_bg, hover_color=body_bg, fg_color=text_fg,
         )
-        body.pack(side="left")
+        body.pack(side="left", pady=10, padx=(0, 14))
 
 
 class MinorTaskRow(tk.Frame):
     def __init__(self, parent, task, on_toggle=None, read_only=False):
-        super().__init__(parent, bg=config.BG_COLOR)
+        super().__init__(parent, bg=config.TODO_SURFACE_COLOR)
         done = task.get("done", False)
-        text = ("✓ " + task["text"]) if done else task["text"]
-        bg = config.TODO_DONE_COLOR if done else "#333333"
         cmd = (lambda: on_toggle(task["id"])) if (on_toggle and not read_only) else None
-        btn = RoundedButton(self, text=text, command=cmd, width=320, height=48, bg_color=bg, fg_color="white")
-        btn.pack(pady=3)
+
+        checkbox = CircleCheckbox(self, done=done, command=cmd, size=26)
+        checkbox.pack(side="left", padx=(12, 8), pady=9)
+
+        text_fg = "#666666" if done else "white"
+        font = ("Verdana", 12, "overstrike") if done else ("Verdana", 12)
+        lbl = tk.Label(self, text=task["text"], font=font, bg=config.TODO_SURFACE_COLOR, fg=text_fg, anchor="w")
+        lbl.pack(side="left", fill="x", expand=True, padx=(0, 12), pady=9)
+
+        if cmd:
+            self.bind("<Button-1>", lambda e: cmd())
+            lbl.bind("<Button-1>", lambda e: cmd())
 
 
 class TaskTimerPanel(tk.Frame):
@@ -58,8 +97,11 @@ class TaskTimerPanel(tk.Frame):
     records session entries via on_session callback. Created once and kept
     alive for the lifetime of the page - never rebuilt by TodoPage._render()."""
 
+    PHASE_CAPTIONS = {"focus": "Focus", "short_break": "Short break", "long_break": "Long break"}
+    PHASE_COLORS = {"focus": None, "short_break": "#66BB6A", "long_break": "#00E676"}  # None = TODO_ACCENT
+
     def __init__(self, parent, on_session=None, on_active_changed=None):
-        super().__init__(parent, bg=config.BG_COLOR)
+        super().__init__(parent, bg=config.TODO_SURFACE_COLOR)
         self.on_session = on_session
         self.on_active_changed = on_active_changed
         self.active_task_id = None
@@ -69,26 +111,25 @@ class TaskTimerPanel(tk.Frame):
         self.engine = PomodoroEngine(self, on_tick=self._on_tick, on_phase_change=self._on_phase_change,
                                       on_focus_complete=self._on_focus_complete)
 
-        self.task_lbl = tk.Label(self, text="Select a major task to focus", font=config.FONT_MED,
-                                  bg=config.BG_COLOR, fg=config.FG_COLOR)
-        self.task_lbl.pack(pady=(10, 5))
+        self.task_lbl = tk.Label(self, text="No active task", font=("Verdana", 14, "bold"),
+                                  bg=config.TODO_SURFACE_COLOR, fg=config.FG_COLOR)
+        self.task_lbl.pack(pady=(18, 2))
 
-        self.status_lbl = tk.Label(self, text="Ready", font=("Verdana", 16, "bold"),
-                                    bg=config.BG_COLOR, fg="gray")
-        self.status_lbl.pack(pady=5)
+        self.phase_lbl = tk.Label(self, text="Tap a task to start focusing", font=("Verdana", 11),
+                                   bg=config.TODO_SURFACE_COLOR, fg="#777777")
+        self.phase_lbl.pack(pady=(0, 8))
 
         self.time_lbl = tk.Label(self, text=f"{self.engine.minutes:02d}:{self.engine.seconds:02d}",
-                                  font=("Verdana", 56, "bold"), bg=config.BG_COLOR, fg=config.TODO_ACCENT)
-        self.time_lbl.pack(pady=10)
+                                  font=("Verdana", 52, "bold"), bg=config.TODO_SURFACE_COLOR, fg=config.TODO_ACCENT)
+        self.time_lbl.pack(pady=6)
 
-        btn_frame = tk.Frame(self, bg=config.BG_COLOR)
-        btn_frame.pack(pady=15)
-        RoundedButton(btn_frame, text="Start", command=self._start_clicked, width=100, height=55,
-                      bg_color="#333").pack(side="left", padx=8)
-        RoundedButton(btn_frame, text="Pause", command=self.engine.pause, width=100, height=55,
-                      bg_color="#333").pack(side="left", padx=8)
-        RoundedButton(btn_frame, text="Reset", command=self._reset_clicked, width=100, height=55,
-                      bg_color="#333").pack(side="left", padx=8)
+        btn_frame = tk.Frame(self, bg=config.TODO_SURFACE_COLOR)
+        btn_frame.pack(pady=(6, 18))
+        self.pause_btn = RoundedButton(btn_frame, text="Pause", command=self._toggle_pause, width=90, height=42,
+                                        bg_color="#2A2A2A")
+        self.pause_btn.pack(side="left", padx=6)
+        RoundedButton(btn_frame, text="Reset", command=self._reset_clicked, width=90, height=42,
+                      bg_color="#2A2A2A").pack(side="left", padx=6)
 
     def select_task(self, task_id, text):
         if self.active_task_id == task_id:
@@ -101,7 +142,8 @@ class TaskTimerPanel(tk.Frame):
         self.task_lbl.config(text=text, fg="white")
         self._begin_focus_timing()
         self.engine.start()
-        self.status_lbl.config(text="Focusing...", fg=config.FG_COLOR)
+        self.phase_lbl.config(text="Focus", fg="#AAAAAA")
+        self.pause_btn.set_text(text="Pause")
         if self.on_active_changed:
             self.on_active_changed()
 
@@ -112,25 +154,32 @@ class TaskTimerPanel(tk.Frame):
         self.engine.reset()
         self.active_task_id = None
         self.active_task_text = None
-        self.task_lbl.config(text="Select a major task to focus", fg=config.FG_COLOR)
+        self.task_lbl.config(text="No active task", fg=config.FG_COLOR)
         self.time_lbl.config(text=f"{self.engine.minutes:02d}:{self.engine.seconds:02d}", fg=config.TODO_ACCENT)
-        self.status_lbl.config(text="Ready", fg="gray")
+        self.phase_lbl.config(text="Tap a task to start focusing", fg="#777777")
+        self.pause_btn.set_text(text="Pause")
         if self.on_active_changed:
             self.on_active_changed()
 
-    def _start_clicked(self):
+    def _toggle_pause(self):
         if self.active_task_id is None:
             return
-        if self.engine.state != "RUNNING":
+        if self.engine.state == "RUNNING":
+            self.engine.pause()
+            self.phase_lbl.config(text="Paused", fg="orange")
+            self.pause_btn.set_text(text="Resume")
+        else:
             self.engine.start()
-            self.status_lbl.config(text="Focusing..." if self.engine.timer_mode == "FOCUS" else "Relaxing...",
-                                    fg=config.FG_COLOR)
+            phase = "short_break" if self.engine.timer_mode == "BREAK" else "focus"
+            self.phase_lbl.config(text=self.PHASE_CAPTIONS.get(phase, "Focus"), fg="#AAAAAA")
+            self.pause_btn.set_text(text="Pause")
 
     def _reset_clicked(self):
         self._finalize_session(completed=False)
         self.engine.reset()
         self.time_lbl.config(text=f"{self.engine.minutes:02d}:{self.engine.seconds:02d}", fg=config.TODO_ACCENT)
-        self.status_lbl.config(text="Ready", fg="gray")
+        self.phase_lbl.config(text="Focus", fg="#AAAAAA")
+        self.pause_btn.set_text(text="Pause")
 
     def _begin_focus_timing(self):
         self._session_start = datetime.now()
@@ -139,15 +188,10 @@ class TaskTimerPanel(tk.Frame):
         self.time_lbl.config(text=f"{minutes:02d}:{seconds:02d}")
 
     def _on_phase_change(self, mode, phase_label, count):
-        if phase_label == "long_break":
-            self.status_lbl.config(text="Long Break", fg="#00E676")
-            self.time_lbl.config(fg="#00E676")
-        elif phase_label == "short_break":
-            self.status_lbl.config(text="Short Break", fg="green")
-            self.time_lbl.config(fg="green")
-        else:
-            self.status_lbl.config(text="Focusing...", fg=config.FG_COLOR)
-            self.time_lbl.config(fg=config.TODO_ACCENT)
+        color = self.PHASE_COLORS.get(phase_label) or config.TODO_ACCENT
+        self.phase_lbl.config(text=self.PHASE_CAPTIONS.get(phase_label, "Focus"), fg="#AAAAAA")
+        self.time_lbl.config(fg=color)
+        if phase_label == "focus":
             self._begin_focus_timing()
 
     def _on_focus_complete(self, count):
@@ -200,7 +244,7 @@ class TodoPage(tk.Frame):
 
     def _build_header(self):
         header = tk.Frame(self, bg=config.BG_COLOR)
-        header.pack(fill="x", pady=(15, 5), padx=20)
+        header.pack(fill="x", pady=(15, 10), padx=20)
 
         left = tk.Frame(header, bg=config.BG_COLOR)
         left.pack(side="left")
@@ -212,22 +256,25 @@ class TodoPage(tk.Frame):
 
         right = tk.Frame(header, bg=config.BG_COLOR)
         right.pack(side="right")
-        RoundedButton(right, text="History", command=self._show_history, width=100, height=50,
-                      bg_color="#333").pack(side="right", padx=(10, 0))
-        RoundedButton(right, text="Refresh", command=lambda: self.trigger_sync(manual=True), width=100, height=50,
-                      bg_color="#333").pack(side="right", padx=(10, 0))
-        self.sync_status_lbl = tk.Label(right, text="", font=config.FONT_SMALL, bg=config.BG_COLOR, fg="#888888")
-        self.sync_status_lbl.pack(side="right", padx=(0, 15))
+        RoundedButton(right, text="History", command=self._show_history, width=90, height=50,
+                      bg_color="#2A2A2A").pack(side="right", padx=(8, 0))
+        # The Refresh button doubles as the sync-status indicator (subtitle),
+        # so status doesn't need its own separate label cluttering the header.
+        self.refresh_btn = RoundedButton(right, text="Refresh", subtitle="Not synced",
+                                          command=lambda: self.trigger_sync(manual=True),
+                                          width=150, height=50, bg_color="#2A2A2A")
+        self.refresh_btn.pack(side="right")
 
     def _update_sync_status_label(self):
         if self._sync_in_progress:
-            self.sync_status_lbl.config(text="Syncing...", fg="#888888")
+            subtitle, bg = "Syncing…", "#2A2A2A"
         elif self.state.get("last_sync_error"):
-            self.sync_status_lbl.config(text="Sync failed - showing cached", fg="orange")
+            subtitle, bg = "Sync failed", "#7A3B24"
         elif self.state.get("last_synced_at"):
-            self.sync_status_lbl.config(text=f"Synced {self.state['last_synced_at'][11:16]}", fg="#888888")
+            subtitle, bg = f"Synced {self.state['last_synced_at'][11:16]}", "#2A2A2A"
         else:
-            self.sync_status_lbl.config(text="Not synced yet", fg="#888888")
+            subtitle, bg = "Not synced", "#2A2A2A"
+        self.refresh_btn.set_text(subtitle=subtitle, bg_color=bg)
 
     # ---------------- persistent today scaffold ----------------
 
@@ -245,27 +292,25 @@ class TodoPage(tk.Frame):
         right_col = tk.Frame(self.today_frame, bg=config.BG_COLOR)
         right_col.pack(side="left", fill="both", expand=True, padx=15)
 
-        tk.Label(left_col, text="Major Tasks", font=config.FONT_MED, bg=config.BG_COLOR,
-                 fg=config.TODO_ACCENT).pack(anchor="w", pady=(10, 5))
+        tk.Label(left_col, text="MAJOR TASKS", font=("Verdana", 10, "bold"), bg=config.BG_COLOR,
+                 fg="#5A5A5A").pack(anchor="w", pady=(6, 8))
         self.major_list = tk.Frame(left_col, bg=config.BG_COLOR)
         self.major_list.pack(fill="x")
         self.major_overflow_lbl = tk.Label(left_col, text="", font=config.FONT_SMALL,
                                             bg=config.BG_COLOR, fg="#666666")
-        self.major_overflow_lbl.pack(anchor="w", pady=(2, 0))
-
-        tk.Frame(left_col, height=2, bg=config.DIVIDER_COLOR).pack(fill="x", pady=15)
+        self.major_overflow_lbl.pack(anchor="w", pady=(4, 0))
 
         self.timer_panel = TaskTimerPanel(left_col, on_session=self.on_session_recorded,
                                            on_active_changed=self._render)
-        self.timer_panel.pack(fill="x")
+        self.timer_panel.pack(fill="x", pady=(14, 0))
 
-        tk.Label(right_col, text="Quick Tasks", font=config.FONT_MED, bg=config.BG_COLOR,
-                 fg=config.FG_COLOR).pack(anchor="w", pady=(10, 5))
+        tk.Label(right_col, text="QUICK TASKS", font=("Verdana", 10, "bold"), bg=config.BG_COLOR,
+                 fg="#5A5A5A").pack(anchor="w", pady=(6, 8))
         self.minor_list = tk.Frame(right_col, bg=config.BG_COLOR)
         self.minor_list.pack(fill="x")
         self.minor_overflow_lbl = tk.Label(right_col, text="", font=config.FONT_SMALL,
                                             bg=config.BG_COLOR, fg="#666666")
-        self.minor_overflow_lbl.pack(anchor="w", pady=(2, 0))
+        self.minor_overflow_lbl.pack(anchor="w", pady=(4, 0))
 
     # ---------------- lifecycle hooks (called by SwipeableContainer) ----------------
 
@@ -374,7 +419,7 @@ class TodoPage(tk.Frame):
                                 on_toggle=lambda tid: self.on_toggle_done("major_tasks", tid),
                                 on_select=self.on_major_task_tapped,
                                 is_active=(task["id"] == active_id))
-            row.pack(anchor="w", pady=4)
+            row.pack(fill="x", pady=4)
         overflow = self.state.get("major_overflow_count", 0)
         self.major_overflow_lbl.config(text=f"+{overflow} more in Todoist" if overflow else "")
 
@@ -382,7 +427,7 @@ class TodoPage(tk.Frame):
             child.destroy()
         for task in self.state.get("minor_tasks", []):
             row = MinorTaskRow(self.minor_list, task, on_toggle=lambda tid: self.on_toggle_done("minor_tasks", tid))
-            row.pack(anchor="w")
+            row.pack(fill="x", pady=3)
         overflow = self.state.get("minor_overflow_count", 0)
         self.minor_overflow_lbl.config(text=f"+{overflow} more in Todoist" if overflow else "")
 
@@ -405,7 +450,7 @@ class TodoPage(tk.Frame):
         tk.Label(top, text="History", font=config.FONT_LARGE, bg=config.BG_COLOR,
                  fg=config.TODO_ACCENT).pack(side="left")
         RoundedButton(top, text="Back to Today", command=self._back_to_today, width=160, height=50,
-                      bg_color="#333").pack(side="right")
+                      bg_color="#2A2A2A").pack(side="right")
 
         dates = todo_store.list_history_dates()
         if not dates:
@@ -417,7 +462,7 @@ class TodoPage(tk.Frame):
         list_frame.pack(fill="both", expand=True, padx=20)
         for d in dates:
             RoundedButton(list_frame, text=d, command=lambda d=d: self._show_history_detail(d),
-                          width=300, height=55, bg_color="#333").pack(anchor="w", pady=4)
+                          width=300, height=55, bg_color="#2A2A2A").pack(anchor="w", pady=4)
 
     def _show_history_detail(self, date_str):
         snapshot = todo_store.load_history(date_str)
@@ -429,9 +474,9 @@ class TodoPage(tk.Frame):
         tk.Label(top, text=date_str, font=config.FONT_LARGE, bg=config.BG_COLOR,
                  fg=config.TODO_ACCENT).pack(side="left")
         RoundedButton(top, text="Back to Dates", command=self._render_history_dates, width=160, height=50,
-                      bg_color="#333").pack(side="right", padx=(10, 0))
+                      bg_color="#2A2A2A").pack(side="right", padx=(10, 0))
         RoundedButton(top, text="Back to Today", command=self._back_to_today, width=160, height=50,
-                      bg_color="#333").pack(side="right")
+                      bg_color="#2A2A2A").pack(side="right")
 
         if snapshot is None:
             tk.Label(self.history_frame, text="Snapshot not found", font=config.FONT_MED,
@@ -447,15 +492,15 @@ class TodoPage(tk.Frame):
         right_col = tk.Frame(body, bg=config.BG_COLOR)
         right_col.pack(side="left", fill="both", expand=True, padx=15)
 
-        tk.Label(left_col, text="Major Tasks", font=config.FONT_MED, bg=config.BG_COLOR,
-                 fg=config.TODO_ACCENT).pack(anchor="w", pady=(10, 5))
+        tk.Label(left_col, text="MAJOR TASKS", font=("Verdana", 10, "bold"), bg=config.BG_COLOR,
+                 fg="#5A5A5A").pack(anchor="w", pady=(6, 8))
         for task in snapshot.get("major_tasks", []):
-            MajorTaskRow(left_col, task, read_only=True).pack(anchor="w", pady=4)
+            MajorTaskRow(left_col, task, read_only=True).pack(fill="x", pady=4)
 
-        tk.Label(right_col, text="Quick Tasks", font=config.FONT_MED, bg=config.BG_COLOR,
-                 fg=config.FG_COLOR).pack(anchor="w", pady=(10, 5))
+        tk.Label(right_col, text="QUICK TASKS", font=("Verdana", 10, "bold"), bg=config.BG_COLOR,
+                 fg="#5A5A5A").pack(anchor="w", pady=(6, 8))
         for task in snapshot.get("minor_tasks", []):
-            MinorTaskRow(right_col, task, read_only=True).pack(anchor="w")
+            MinorTaskRow(right_col, task, read_only=True).pack(fill="x", pady=3)
 
     def _back_to_today(self):
         if self.history_frame is not None:
