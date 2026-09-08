@@ -63,7 +63,7 @@ class RoundedButton(tk.Canvas):
 
         
         # Draw Content
-        
+
         if self.icon:
             if not self.text_str and not self.subtitle:
                 # Icon ONLY -> Center it completely
@@ -71,38 +71,67 @@ class RoundedButton(tk.Canvas):
             else:
                 # Layout: [ Icon ]  Title
                 #                   Subtitle
-                
+
                 # Icon centered in left 15% zone (approx)
                 icon_center_x = self.width * 0.15
                 self.create_image(icon_center_x, self.height/2, image=self.icon)
-                
+
                 text_x = self.width * 0.30  # Start text at 30% width
-                
+                max_w = self.width - text_x - 8  # leave a small right margin
+
                 if self.subtitle:
                     # Title (Top half)
                     title_font = tkfont.Font(family="Helvetica", size=14, weight="bold")
-                    self.create_text(text_x, self.height * 0.35, text=self.text_str, fill=self.fg_color, font=title_font, anchor="w")
-                    
+                    self.create_text(text_x, self.height * 0.35, text=self._fit_text(self.text_str, title_font, max_w),
+                                      fill=self.fg_color, font=title_font, anchor="w")
+
                     # Subtitle (Bottom half)
                     sub_font = tkfont.Font(family="Helvetica", size=10)
-                    self.create_text(text_x, self.height * 0.65, text=self.subtitle, fill="#DDDDDD", font=sub_font, anchor="w")
+                    self.create_text(text_x, self.height * 0.65, text=self._fit_text(self.subtitle, sub_font, max_w),
+                                      fill="#DDDDDD", font=sub_font, anchor="w")
                 else:
                     # Centered Title (Vertically)
                     font = tkfont.Font(family="Helvetica", size=12, weight="bold")
-                    self.create_text(text_x, self.height / 2, text=self.text_str, fill=self.fg_color, font=font, anchor="w")
-                
+                    self.create_text(text_x, self.height / 2, text=self._fit_text(self.text_str, font, max_w),
+                                      fill=self.fg_color, font=font, anchor="w")
+
         elif self.subtitle:
             # Title + subtitle, centered (no icon)
+            max_w = self.width - 12
             title_font = tkfont.Font(family="Helvetica", size=13, weight="bold")
-            self.create_text(self.width / 2, self.height * 0.36, text=self.text_str, fill=self.fg_color, font=title_font)
+            self.create_text(self.width / 2, self.height * 0.36, text=self._fit_text(self.text_str, title_font, max_w),
+                              fill=self.fg_color, font=title_font)
 
             sub_font = tkfont.Font(family="Helvetica", size=9)
-            self.create_text(self.width / 2, self.height * 0.70, text=self.subtitle, fill="#DDDDDD", font=sub_font)
+            self.create_text(self.width / 2, self.height * 0.70, text=self._fit_text(self.subtitle, sub_font, max_w),
+                              fill="#DDDDDD", font=sub_font)
 
         else:
             # Text Only (Centered)
+            max_w = self.width - 12
             font = tkfont.Font(family="Helvetica", size=12)
-            self.create_text(self.width / 2, self.height / 2, text=self.text_str, fill=self.fg_color, font=font)
+            self.create_text(self.width / 2, self.height / 2, text=self._fit_text(self.text_str, font, max_w),
+                              fill=self.fg_color, font=font)
+
+    @staticmethod
+    def _fit_text(text, font, max_width):
+        """Truncates text with an ellipsis so it never overflows max_width,
+        instead of spilling past the button's edges."""
+        if max_width <= 0 or not text:
+            return text
+        if font.measure(text) <= max_width:
+            return text
+        ellipsis = "…"
+        if font.measure(ellipsis) > max_width:
+            return ellipsis
+        lo, hi = 0, len(text)
+        while lo < hi:
+            mid = (lo + hi + 1) // 2
+            if font.measure(text[:mid] + ellipsis) <= max_width:
+                lo = mid
+            else:
+                hi = mid - 1
+        return (text[:lo] + ellipsis) if lo > 0 else ellipsis
 
     def set_text(self, text=None, subtitle=None, bg_color=None, icon=None):
         """Updates the button's label/subtitle/color/icon in place and redraws."""
