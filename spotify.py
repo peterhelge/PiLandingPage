@@ -30,6 +30,19 @@ class TouchScrollableRow(RoundedButton):
         self._press_y = None
         self._moved = False
 
+        # This row is packed with fill="x", so the packer stretches the
+        # actual canvas wider than the fixed width it was constructed with -
+        # but RoundedButton._draw() only ever draws at self.width, leaving
+        # the rounded rect/text stuck at the original (narrower) size with
+        # empty canvas space to its right. Redraw at the real width whenever
+        # it changes so the button visually fills its row edge-to-edge.
+        self.bind("<Configure>", self._on_configure)
+
+    def _on_configure(self, event):
+        if event.width > 1 and event.width != self.width:
+            self.width = event.width
+            self._draw(self.bg_color)
+
     def _on_press(self, event):
         self._press_y = event.y_root
         self._moved = False
