@@ -53,7 +53,7 @@ Before running the code, you need to set up keys for the APIs.
 ### 2. Spotify Developer
 1. Go to the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard/).
 2. Create a new App to get **Client ID** and **Client Secret**.
-3. **Important:** Add `http://localhost:8888/callback` to the **Redirect URIs**.
+3. **Important:** Add `http://127.0.0.1:8080/callback` to the **Redirect URIs**. Spotify deprecated `localhost` as a redirect host (April 2025) — use the literal loopback IP `127.0.0.1` instead, and make sure the port here matches `SPOTIPY_REDIRECT_URI` in your `.env` exactly.
 
 ### 3. Home Assistant
 1. In Home Assistant, go to your User Profile (bottom left) -> **Security**.
@@ -91,7 +91,7 @@ WEATHER_LON=18.0686
 # Spotify
 SPOTIPY_CLIENT_ID=your_id
 SPOTIPY_CLIENT_SECRET=your_secret
-SPOTIPY_REDIRECT_URI=http://localhost:8888/callback
+SPOTIPY_REDIRECT_URI=http://127.0.0.1:8080/callback
 
 # Home Assistant
 HA_BASE_URL=http://homeassistant.local:8123
