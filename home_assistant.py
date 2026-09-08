@@ -2,6 +2,7 @@ import tkinter as tk
 import config
 from components import RoundedButton
 from ha_api import ha_client
+import mold_risk
 import threading
 
 from PIL import Image, ImageTk
@@ -110,6 +111,89 @@ class HAWidget(tk.Frame):
                     self.icon_lbl.config(image=self.icon_off)
                 self.name_lbl.config(fg="#AAA")
                 
+class MoldRiskGauge(tk.Frame):
+    """Circular meter combining a temperature + humidity sensor pair into a
+    single at-a-glance mould-risk indicator, via mold_risk.mold_risk_ratio."""
+
+    SIZE = 100
+    RING_WIDTH = 10
+    MAX_RATIO_FOR_FULL_RING = 1.2  # ring visually maxes out a bit past "high" (0.95) rather than clipping right at it
+
+    def __init__(self, parent, temp_entity_id, humidity_entity_id):
+        super().__init__(parent, bg=config.BG_COLOR)
+        self.temp_entity_id = temp_entity_id
+        self.humidity_entity_id = humidity_entity_id
+        self.temp_val = None
+        self.humidity_val = None
+
+        self.canvas = tk.Canvas(self, width=self.SIZE, height=self.SIZE, bg=config.BG_COLOR, highlightthickness=0)
+        self.canvas.pack()
+
+        self.name_lbl = tk.Label(self, text="Attic Mould Risk", font=config.FONT_SMALL,
+                                  bg=config.BG_COLOR, fg="#AAA", wraplength=100, justify="center")
+        self.name_lbl.pack(fill="x")
+
+        self.detail_lbl = tk.Label(self, text="", font=("Verdana", 10), bg=config.BG_COLOR, fg="#777777")
+        self.detail_lbl.pack(fill="x")
+
+        self._draw(None)
+        self.update_state()
+
+    def update_state(self):
+        threading.Thread(target=self._fetch, daemon=True).start()
+        self.after(5000, self.update_state)
+
+    def _fetch(self):
+        t_obj = ha_client.get_entity_state(self.temp_entity_id)
+        h_obj = ha_client.get_entity_state(self.humidity_entity_id)
+        self.after(0, lambda: self._update_ui(t_obj, h_obj))
+
+    def _update_ui(self, t_obj, h_obj):
+        try:
+            if t_obj is not None:
+                self.temp_val = float(t_obj['state'])
+        except (ValueError, TypeError, KeyError):
+            pass
+        try:
+            if h_obj is not None:
+                self.humidity_val = float(h_obj['state'])
+        except (ValueError, TypeError, KeyError):
+            pass
+
+        ratio = mold_risk.mold_risk_ratio(self.temp_val, self.humidity_val)
+        self._draw(ratio)
+
+        if self.temp_val is not None and self.humidity_val is not None:
+            self.detail_lbl.config(text=f"{self.temp_val:.0f}°C  {self.humidity_val:.0f}%")
+        else:
+            self.detail_lbl.config(text="No data")
+
+    def _draw(self, ratio):
+        self.canvas.delete("all")
+        pad = self.RING_WIDTH / 2 + 2
+        bbox = (pad, pad, self.SIZE - pad, self.SIZE - pad)
+
+        # Background ring (full circle, dim) - always shown as the track the value ring sits on
+        self.canvas.create_oval(*bbox, outline="#2A2A2A", width=self.RING_WIDTH)
+
+        level, color = mold_risk.risk_level(ratio)
+
+        if ratio is not None:
+            fraction = max(0.0, min(ratio, self.MAX_RATIO_FOR_FULL_RING)) / self.MAX_RATIO_FOR_FULL_RING
+            # Start at 12 o'clock (90 deg in Tk's math convention), sweep clockwise
+            # (negative extent) proportional to how far into the risk range we are.
+            extent = -359.9 * fraction
+            if fraction > 0:
+                self.canvas.create_arc(*bbox, start=90, extent=extent, style="arc",
+                                        outline=color, width=self.RING_WIDTH)
+            label = f"{int(round(ratio * 100))}%"
+        else:
+            label = "--"
+
+        self.canvas.create_text(self.SIZE / 2, self.SIZE / 2, text=label, fill=color,
+                                 font=("Verdana", 15, "bold"))
+
+
 class HomeAssistantPage(tk.Frame):
     def __init__(self, parent):
         super().__init__(parent, bg=config.BG_COLOR)
@@ -121,31 +205,47 @@ class HomeAssistantPage(tk.Frame):
         # Entity Grid Container - Centered nicely
         self.grid_frame = tk.Frame(self, bg=config.BG_COLOR)
         self.grid_frame.pack(fill="both", expand=True, padx=40)
-        
-        if not config.HA_ENTITIES:
-            tk.Label(self.grid_frame, 
-                     text="No Entities Configured.\nAdd HA_ENTITIES to .env", 
+
+        has_mold_gauge = bool(config.MOLD_RISK_TEMP_ENTITY and config.MOLD_RISK_HUMIDITY_ENTITY)
+        if not config.HA_ENTITIES and not has_mold_gauge:
+            tk.Label(self.grid_frame,
+                     text="No Entities Configured.\nAdd HA_ENTITIES to .env",
                      font=config.FONT_MED, bg=config.BG_COLOR, fg="gray").pack()
         else:
-            self.create_widgets()
+            self.create_widgets(has_mold_gauge)
 
-    def create_widgets(self):
+    def create_widgets(self, has_mold_gauge):
         # App Icon Grid Layout
         cols = 4 # More dense
-        for i, entity_id in enumerate(config.HA_ENTITIES):
+        index = 0
+        for entity_id in config.HA_ENTITIES:
             try:
-                row = i // cols
-                col = i % cols
-                
+                row = index // cols
+                col = index % cols
+
                 # Container for cell (helps centering)
                 frame_container = tk.Frame(self.grid_frame, bg=config.BG_COLOR)
                 frame_container.grid(row=row, column=col, padx=15, pady=25) # More breathing room around icons
-                
+
                 # Actual Widget
                 w = HAWidget(frame_container, entity_id=entity_id)
                 w.pack()
+                index += 1
             except Exception as e:
                 print(f"Error creating widget: {e}")
+
+        # Mould-risk gauge - combines the attic temp/humidity sensors (which
+        # may also be listed individually above) into one at-a-glance meter.
+        if has_mold_gauge:
+            try:
+                row = index // cols
+                col = index % cols
+                frame_container = tk.Frame(self.grid_frame, bg=config.BG_COLOR)
+                frame_container.grid(row=row, column=col, padx=15, pady=25)
+                MoldRiskGauge(frame_container, config.MOLD_RISK_TEMP_ENTITY,
+                              config.MOLD_RISK_HUMIDITY_ENTITY).pack()
+            except Exception as e:
+                print(f"Error creating mold risk gauge: {e}")
 
         # Configure Grid Weights so it centers content if few items
         # OR: Just let them pack to top-left or center. 
