@@ -59,6 +59,7 @@ Before running the code, you need to set up keys for the APIs.
 1. In Home Assistant, go to your User Profile (bottom left) -> **Security**.
 2. Create a **Long-Lived Access Token**.
 3. Note down the **Entity IDs** you want to control (e.g., `light.living_room`).
+4. Optional - attic mould-risk gauge: if you have a temperature and humidity sensor pair (e.g. in an attic/crawlspace), note down their Entity IDs too for `MOLD_RISK_TEMP_ENTITY`/`MOLD_RISK_HUMIDITY_ENTITY` below. The gauge simply doesn't appear if these aren't set.
 
 ---
 
@@ -97,6 +98,10 @@ SPOTIPY_REDIRECT_URI=http://127.0.0.1:8080/callback
 HA_BASE_URL=http://homeassistant.local:8123
 HA_ACCESS_TOKEN=your_long_token_here
 HA_ENTITIES=light.lamp1,switch.plug2
+
+# Mould-risk gauge (optional - omit to hide it)
+MOLD_RISK_TEMP_ENTITY=sensor.your_temperature_sensor
+MOLD_RISK_HUMIDITY_ENTITY=sensor.your_humidity_sensor
 ```
 
 ### 4. Run the App
