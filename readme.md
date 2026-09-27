@@ -22,16 +22,23 @@ A sleek, touch-friendly smart dashboard designed for the Raspberry Pi 4 and the 
 - **Quick Playlists**: Scrollable list of your top 10 playlists for one-touch playback.
 - **Status**: Polls playback state every 5 seconds.
 
-### 4. 🏠 Home Assistant Control (New!)
-- **Direct Integration**: Talk directly to your Home Assistant instance API.
-- **Interactive Widgets**: graphical lightbulb icons showing live state (Yellow=On, Gray=Off).
-- **Zero Lag**: Native Python implementation means instant response compared to loading web dashboards.
+### 4. ✅ Today's Todo
+- **Major/Minor Tasks**: Two-tier todo list synced against dedicated Todoist projects.
+- **Pomodoro Sessions**: Track focus sessions per major task.
+- **Two-Way Sync**: Completing a task locally or in the Todoist app is reflected on both sides.
 - **Page 2**: Accessible by swiping left.
 
-### 5. ⚙️ System Settings
+### 5. 🏠 Home Assistant Control
+- **Direct Integration**: Talk directly to your Home Assistant instance API.
+- **Interactive Widgets**: graphical lightbulb icons showing live state (Yellow=On, Gray=Off).
+- **Attic Mould-Risk Gauge**: Optional gauge computed from a temperature/humidity sensor pair.
+- **Zero Lag**: Native Python implementation means instant response compared to loading web dashboards.
+- **Page 3**: Accessible by swiping left twice.
+
+### 6. ⚙️ System Settings
 - **Shutdown & Reboot**: Gracefully power off or restart your Pi from the UI.
 - **Exit Kiosk**: Easily close the app for maintenance.
-- **Protection**: Located on Page 3 (Swipe left twice) to prevent accidental clicks.
+- **Protection**: Located on Page 4 (Swipe left three times) to prevent accidental clicks.
 
 ---
 
@@ -60,6 +67,10 @@ Before running the code, you need to set up keys for the APIs.
 2. Create a **Long-Lived Access Token**.
 3. Note down the **Entity IDs** you want to control (e.g., `light.living_room`).
 4. Optional - attic mould-risk gauge: if you have a temperature and humidity sensor pair (e.g. in an attic/crawlspace), note down their Entity IDs too for `MOLD_RISK_TEMP_ENTITY`/`MOLD_RISK_HUMIDITY_ENTITY` below. The gauge simply doesn't appear if these aren't set.
+
+### 4. Todoist
+1. Go to Todoist **Settings -> Integrations -> Developer** and copy your **API token**.
+2. Create two Todoist projects to sync against - one for major tasks, one for minor tasks (defaults: `Today - Major` and `Today - Minor`, or pick your own names and set them below).
 
 ---
 
@@ -102,6 +113,11 @@ HA_ENTITIES=light.lamp1,switch.plug2
 # Mould-risk gauge (optional - omit to hide it)
 MOLD_RISK_TEMP_ENTITY=sensor.your_temperature_sensor
 MOLD_RISK_HUMIDITY_ENTITY=sensor.your_humidity_sensor
+
+# Todoist (Today's Todo sync)
+TODOIST_API_TOKEN=your_todoist_api_token
+TODOIST_MAJOR_PROJECT_NAME=Today - Major
+TODOIST_MINOR_PROJECT_NAME=Today - Minor
 ```
 
 ### 4. Run the App
