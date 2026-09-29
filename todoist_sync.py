@@ -2,6 +2,7 @@ import threading
 from datetime import datetime
 
 import config
+from app_logging import logger
 
 try:
     from todoist_api_python.api import TodoistAPI
@@ -80,7 +81,7 @@ class TodoistSync:
                 state["last_sync_error"] = None
                 return state
             except Exception as e:
-                print(f"[todoist_sync] sync failed: {e}")
+                logger.error(f"[todoist_sync] sync failed: {e}")
                 state["last_sync_error"] = str(e)
                 raise TodoistSyncError(str(e)) from e
 
@@ -99,7 +100,7 @@ class TodoistSync:
                     self._api.uncomplete_task(todoist_id)
                 task["pending_push"] = False
             except Exception as e:
-                print(f"[todoist_sync] push failed for task {task.get('id')}: {e}")
+                logger.error(f"[todoist_sync] push failed for task {task.get('id')}: {e}")
                 # leave pending_push True - retried next cycle
 
     def _merge_section(self, state, section_key, project, max_items):

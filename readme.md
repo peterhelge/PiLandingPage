@@ -130,3 +130,8 @@ To run on the display allowing graphical output from SSH:
 ```bash
 DISPLAY=:0 python main.py
 ```
+
+### 5. Logs
+Errors (weather/Spotify/HA/Todoist fetch failures, etc.) are written to
+`logs/app.log`, alongside the same output printed to the console. Log files
+rotate daily and anything older than 30 days is deleted automatically.

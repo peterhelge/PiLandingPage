@@ -4,6 +4,7 @@ import tempfile
 from datetime import date, datetime
 
 import config
+from app_logging import logger
 
 STATE_PATH = os.path.join(config.TODO_DATA_DIR, "state.json")
 HISTORY_DIR = os.path.join(config.TODO_DATA_DIR, "history")
@@ -55,7 +56,7 @@ def load_state():
         with open(STATE_PATH, "r", encoding="utf-8") as f:
             state = json.load(f)
     except (json.JSONDecodeError, OSError) as e:
-        print(f"[todo_store] Failed to read state.json ({e}), starting fresh")
+        logger.warning(f"[todo_store] Failed to read state.json ({e}), starting fresh")
         state = _new_empty_state()
         save_state(state)
         return state

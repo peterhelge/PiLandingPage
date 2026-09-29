@@ -3,6 +3,7 @@ import os
 import platform
 import config
 from components import RoundedButton
+from app_logging import logger
 import sys
 
 class SettingsPage(tk.Frame):
@@ -29,7 +30,7 @@ class SettingsPage(tk.Frame):
             self.icon_reboot = ImageTk.PhotoImage(Image.open("assets/reboot.png").resize(sz))
             self.icon_exit = ImageTk.PhotoImage(Image.open("assets/exit.png").resize(sz))
         except Exception as e:
-            print(f"Error loading icons: {e}")
+            logger.error(f"Error loading icons: {e}")
 
         # Shutdown Button (Red)
         RoundedButton(btn_frame, text="Power Off", subtitle="Turn off the system", command=self.shutdown, 
@@ -47,20 +48,20 @@ class SettingsPage(tk.Frame):
                       icon=self.icon_exit).pack(pady=15)
 
     def shutdown(self):
-        print("Shutting down...")
+        logger.info("Shutting down...")
         if platform.system() == "Linux":
             os.system("sudo shutdown -h now")
         else:
-            print("[Mock] sudo shutdown -h now")
-            # In a real app we might want to confirm or just close, 
+            logger.info("[Mock] sudo shutdown -h now")
+            # In a real app we might want to confirm or just close,
             # here we just print to console for safety on Windows
 
     def reboot(self):
-        print("Rebooting...")
+        logger.info("Rebooting...")
         if platform.system() == "Linux":
             os.system("sudo reboot")
         else:
-            print("[Mock] sudo reboot")
+            logger.info("[Mock] sudo reboot")
 
     def exit_app(self):
         sys.exit(0)

@@ -1,6 +1,7 @@
 import tkinter as tk
 import os
 import config
+from app_logging import logger
 from weather import WeatherWidget
 from pomodoro import PomodoroWidget
 from spotify import SpotifyWidget
@@ -10,7 +11,7 @@ from home_assistant import HomeAssistantPage
 from settings_page import SettingsPage
 from todo_page import TodoPage
 
-# ... imports ...
+logger.info("=== App starting ===")
 
 # Check for assets and generate if missing (or if new icons were added since
 # assets/ was last generated - generate_icons() is idempotent/deterministic,

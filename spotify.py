@@ -4,6 +4,7 @@ import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 import config
 from components import RoundedButton
+from app_logging import logger
 
 PLAYLIST_FETCH_LIMIT = 50   # Spotify's max page size - covers virtually any real library
 PLAYLIST_LIST_HEIGHT = 210  # visible height of the scrollable playlist area (~4 rows)
@@ -148,7 +149,7 @@ class SpotifyWidget(tk.Frame):
                     redirect_uri=config.SPOTIPY_REDIRECT_URI,
                     scope=config.SPOTIPY_SCOPE
                 ))
-            except Exception: print("Spotify Auth Failed")
+            except Exception as e: logger.error(f"Spotify Auth Failed: {e}")
 
         # Eyebrow title, muted - identifies the widget without competing visually
         tk.Label(self, text="SPOTIFY", font=("Verdana", 10, "bold"),
@@ -216,7 +217,7 @@ class SpotifyWidget(tk.Frame):
             self.icon_prev = ImageTk.PhotoImage(Image.open("assets/prev_track.png").resize((28, 28)))
             self.icon_next = ImageTk.PhotoImage(Image.open("assets/next_track.png").resize((28, 28)))
         except Exception as e:
-            print(f"Icon Error: {e}")
+            logger.error(f"Icon Error: {e}")
 
     def get_active_device_id(self):
         if not self.sp: return None
@@ -240,7 +241,7 @@ class SpotifyWidget(tk.Frame):
             # Update UI on Main Thread
             self.after(0, lambda: self._update_playlist_ui(results))
         except Exception as e:
-            print(f"Error fetching playlists: {e}")
+            logger.error(f"Error fetching playlists: {e}")
 
     def _update_playlist_ui(self, results):
         if not results: return
@@ -340,7 +341,7 @@ class SpotifyWidget(tk.Frame):
             dev_id = self.get_active_device_id()
             self.sp.start_playback(context_uri=uri, device_id=dev_id)
         except Exception as e:
-            print(f"Playlist Play Error: {e}")
+            logger.error(f"Playlist Play Error: {e}")
 
     def _run_async(self, func):
         threading.Thread(target=func, daemon=True).start()

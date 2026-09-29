@@ -2,7 +2,8 @@ import tkinter as tk
 import requests
 import os
 from PIL import Image, ImageTk
-import config 
+import config
+from app_logging import logger
 
 class WeatherWidget(tk.Frame):
     def __init__(self, parent):
@@ -74,7 +75,7 @@ class WeatherWidget(tk.Frame):
             self.after(0, lambda: self._update_ui_with_data(data))
 
         except Exception as e:
-            print(f"Weather Fetch Error: {e}")
+            logger.error(f"Weather Fetch Error: {e}")
             self.after(0, lambda: self.desc_lbl.config(text="Error"))
 
     def _update_ui_with_data(self, data):
@@ -110,4 +111,4 @@ class WeatherWidget(tk.Frame):
                     self.photo = ImageTk.PhotoImage(img) # Keep reference
                     self.icon_lbl.config(image=self.photo)
         except Exception as e:
-            print(f"Weather UI Update Error: {e}")
+            logger.error(f"Weather UI Update Error: {e}")

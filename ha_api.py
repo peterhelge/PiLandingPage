@@ -1,6 +1,7 @@
 import requests
 import config
 import threading
+from app_logging import logger
 
 class HomeAssistantAPI:
     def __init__(self):
@@ -20,7 +21,7 @@ class HomeAssistantAPI:
             if res.status_code == 200:
                 return res.json()
         except Exception as e:
-            print(f"HA Fetch Error ({entity_id}): {e}")
+            logger.error(f"HA Fetch Error ({entity_id}): {e}")
         return None
 
     def toggle_entity(self, entity_id, domain="homeassistant"):
@@ -40,7 +41,7 @@ class HomeAssistantAPI:
                 data = {"entity_id": entity_id}
                 requests.post(url, headers=self.headers, json=data, timeout=5)
             except Exception as e:
-                print(f"HA Service Error: {e}")
+                logger.error(f"HA Service Error: {e}")
 
         # Fire and forget in background
         threading.Thread(target=_call, daemon=True).start()

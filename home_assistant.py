@@ -4,6 +4,7 @@ from components import RoundedButton
 from ha_api import ha_client
 import mold_risk
 import threading
+from app_logging import logger
 
 from PIL import Image, ImageTk
 
@@ -41,7 +42,7 @@ class HAWidget(tk.Frame):
                 self.icon_off = ImageTk.PhotoImage(Image.open("assets/bulb_off.png").resize((80, 80)))
                 self.icon_main = None
         except Exception as e:
-            print(f"Error loading icons: {e}")
+            logger.error(f"Error loading icons: {e}")
             self.icon_on = None
             self.icon_off = None
             self.icon_main = None
@@ -240,7 +241,7 @@ class HomeAssistantPage(tk.Frame):
                 w.pack()
                 index += 1
             except Exception as e:
-                print(f"Error creating widget: {e}")
+                logger.error(f"Error creating widget: {e}")
 
         # Mould-risk gauges - each combines a temp/humidity sensor pair (which
         # may also be listed individually above) into one at-a-glance meter.
@@ -253,7 +254,7 @@ class HomeAssistantPage(tk.Frame):
                 MoldRiskGauge(frame_container, temp_entity, humidity_entity, label=label).pack()
                 index += 1
             except Exception as e:
-                print(f"Error creating mold risk gauge: {e}")
+                logger.error(f"Error creating mold risk gauge: {e}")
 
         # Configure Grid Weights so it centers content if few items
         # OR: Just let them pack to top-left or center. 

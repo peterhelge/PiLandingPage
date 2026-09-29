@@ -16,3 +16,6 @@ __pycache__/
 
 # Todo screen local state + history (personal data, not for version control)
 todo_data/
+
+# App logs (30-day rotation, see app_logging.py)
+logs/
