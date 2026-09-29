@@ -41,10 +41,13 @@ HA_ACCESS_TOKEN = os.getenv("HA_ACCESS_TOKEN")
 _ha_entities_str = os.getenv("HA_ENTITIES", "")
 HA_ENTITIES = [e.strip() for e in _ha_entities_str.split(",") if e.strip()]
 
-# Mold-risk gauge: which two HA sensors feed the temp/humidity risk formula
-# (no default - gauge simply doesn't render until both are set in .env)
+# Mold-risk gauges: each pair of HA sensors feeds the temp/humidity risk formula
+# (no default - a gauge simply doesn't render until both of its entities are set in .env)
 MOLD_RISK_TEMP_ENTITY = os.getenv("MOLD_RISK_TEMP_ENTITY", "")
 MOLD_RISK_HUMIDITY_ENTITY = os.getenv("MOLD_RISK_HUMIDITY_ENTITY", "")
+
+LAUNDRY_MOLD_RISK_TEMP_ENTITY = os.getenv("LAUNDRY_MOLD_RISK_TEMP_ENTITY", "")
+LAUNDRY_MOLD_RISK_HUMIDITY_ENTITY = os.getenv("LAUNDRY_MOLD_RISK_HUMIDITY_ENTITY", "")
 
 # --- TODOIST (Today's Todo sync) ---
 TODOIST_API_TOKEN = os.getenv("TODOIST_API_TOKEN")

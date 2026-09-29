@@ -19,8 +19,11 @@ class HAWidget(tk.Frame):
         # Determine type
         self.is_sensor = entity_id.startswith("sensor.")
         self.sensor_type = "generic"
-        if "temp" in entity_id or "temperature" in entity_id: self.sensor_type = "temp"
-        elif "hum" in entity_id or "humidity" in entity_id: self.sensor_type = "humidity"
+        # Check humidity first: an id like "laundry_temperature_humidity" (HA's
+        # auto-suffixing when a device is named after its temp sensor) contains
+        # both substrings, and it's the humidity sensor.
+        if "hum" in entity_id: self.sensor_type = "humidity"
+        elif "temp" in entity_id: self.sensor_type = "temp"
 
         # Load Icons (Larger size: 80x80)
         try:
@@ -119,7 +122,7 @@ class MoldRiskGauge(tk.Frame):
     RING_WIDTH = 10
     MAX_RATIO_FOR_FULL_RING = 1.2  # ring visually maxes out a bit past "high" (0.95) rather than clipping right at it
 
-    def __init__(self, parent, temp_entity_id, humidity_entity_id):
+    def __init__(self, parent, temp_entity_id, humidity_entity_id, label="Mould Risk"):
         super().__init__(parent, bg=config.BG_COLOR)
         self.temp_entity_id = temp_entity_id
         self.humidity_entity_id = humidity_entity_id
@@ -129,7 +132,7 @@ class MoldRiskGauge(tk.Frame):
         self.canvas = tk.Canvas(self, width=self.SIZE, height=self.SIZE, bg=config.BG_COLOR, highlightthickness=0)
         self.canvas.pack()
 
-        self.name_lbl = tk.Label(self, text="Attic Mould Risk", font=config.FONT_SMALL,
+        self.name_lbl = tk.Label(self, text=label, font=config.FONT_SMALL,
                                   bg=config.BG_COLOR, fg="#AAA", wraplength=100, justify="center")
         self.name_lbl.pack(fill="x")
 
@@ -206,15 +209,20 @@ class HomeAssistantPage(tk.Frame):
         self.grid_frame = tk.Frame(self, bg=config.BG_COLOR)
         self.grid_frame.pack(fill="both", expand=True, padx=40)
 
-        has_mold_gauge = bool(config.MOLD_RISK_TEMP_ENTITY and config.MOLD_RISK_HUMIDITY_ENTITY)
-        if not config.HA_ENTITIES and not has_mold_gauge:
+        self.mold_gauges = []
+        if config.MOLD_RISK_TEMP_ENTITY and config.MOLD_RISK_HUMIDITY_ENTITY:
+            self.mold_gauges.append(("Attic Mould Risk", config.MOLD_RISK_TEMP_ENTITY, config.MOLD_RISK_HUMIDITY_ENTITY))
+        if config.LAUNDRY_MOLD_RISK_TEMP_ENTITY and config.LAUNDRY_MOLD_RISK_HUMIDITY_ENTITY:
+            self.mold_gauges.append(("Laundry Mould Risk", config.LAUNDRY_MOLD_RISK_TEMP_ENTITY, config.LAUNDRY_MOLD_RISK_HUMIDITY_ENTITY))
+
+        if not config.HA_ENTITIES and not self.mold_gauges:
             tk.Label(self.grid_frame,
                      text="No Entities Configured.\nAdd HA_ENTITIES to .env",
                      font=config.FONT_MED, bg=config.BG_COLOR, fg="gray").pack()
         else:
-            self.create_widgets(has_mold_gauge)
+            self.create_widgets()
 
-    def create_widgets(self, has_mold_gauge):
+    def create_widgets(self):
         # App Icon Grid Layout
         cols = 4 # More dense
         index = 0
@@ -234,16 +242,16 @@ class HomeAssistantPage(tk.Frame):
             except Exception as e:
                 print(f"Error creating widget: {e}")
 
-        # Mould-risk gauge - combines the attic temp/humidity sensors (which
+        # Mould-risk gauges - each combines a temp/humidity sensor pair (which
         # may also be listed individually above) into one at-a-glance meter.
-        if has_mold_gauge:
+        for label, temp_entity, humidity_entity in self.mold_gauges:
             try:
                 row = index // cols
                 col = index % cols
                 frame_container = tk.Frame(self.grid_frame, bg=config.BG_COLOR)
                 frame_container.grid(row=row, column=col, padx=15, pady=25)
-                MoldRiskGauge(frame_container, config.MOLD_RISK_TEMP_ENTITY,
-                              config.MOLD_RISK_HUMIDITY_ENTITY).pack()
+                MoldRiskGauge(frame_container, temp_entity, humidity_entity, label=label).pack()
+                index += 1
             except Exception as e:
                 print(f"Error creating mold risk gauge: {e}")
 
