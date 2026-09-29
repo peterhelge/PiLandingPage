@@ -108,7 +108,10 @@ SPOTIPY_REDIRECT_URI=http://127.0.0.1:8080/callback
 # Home Assistant
 HA_BASE_URL=http://homeassistant.local:8123
 HA_ACCESS_TOKEN=your_long_token_here
-HA_ENTITIES=light.lamp1,switch.plug2
+# Any entity here (lights, switches, or plain temp/humidity sensors) gets its own
+# widget automatically. Name sensor entities with "temperature"/"humidity" in the
+# id so the right icon is picked, e.g. sensor.laundry_temperature.
+HA_ENTITIES=light.lamp1,switch.plug2,sensor.laundry_temperature,sensor.laundry_humidity
 
 # Mould-risk gauge (optional - omit to hide it)
 MOLD_RISK_TEMP_ENTITY=sensor.your_temperature_sensor
