@@ -6,8 +6,25 @@ from security import INSECURE_HTTP_NOTICE
 import mold_risk
 import threading
 from app_logging import logger
+from ui_thread import IntervalPoll, call_on_ui
 
 from PIL import Image, ImageTk
+
+
+def sensor_number(state_obj):
+    """Numeric sensor reading, or None when HA has no current value."""
+    if not state_obj:
+        return None
+    raw = state_obj.get("state")
+    if raw is None:
+        return None
+    text = str(raw).strip().lower()
+    if text in ("", "unavailable", "unknown", "none"):
+        return None
+    try:
+        return float(raw)
+    except (TypeError, ValueError):
+        return None
 
 class HAWidget(tk.Frame):
     def __init__(self, parent, entity_id):
@@ -72,26 +89,23 @@ class HAWidget(tk.Frame):
             self.name_lbl.bind("<Button-1>", self.toggle)
             self.icon_lbl.bind("<Button-1>", self.toggle)
         
-        self.update_state()
+        self._poll = IntervalPoll(self, 5000, self._fetch_async)
+        self._poll.start()
 
     def toggle(self, event=None):
         if self.is_sensor: return
         ha_client.toggle_entity(self.entity_id)
-        # Optimistic update (Simple color swap simulation if needed, but we wait for update mostly)
-        self.after(200, self.update_state)
-        # Force refresh soon
-        self.after(2000, self.update_state)
+        # One-shot refreshes. They do not start another 5s loop.
+        self._poll.refresh_soon(200)
+        self._poll.refresh_soon(2000)
 
-    def update_state(self):
-        # Threaded fetch
+    def _fetch_async(self):
         threading.Thread(target=self._fetch, daemon=True).start()
-        # Schedule next poll (every 5s)
-        self.after(5000, self.update_state)
 
     def _fetch(self):
         state_obj = ha_client.get_entity_state(self.entity_id)
         if state_obj:
-            self.after(0, lambda: self._update_ui(state_obj))
+            call_on_ui(lambda: self._update_ui(state_obj))
 
     def _update_ui(self, state_obj):
         state = state_obj['state']
@@ -142,28 +156,25 @@ class MoldRiskGauge(tk.Frame):
         self.detail_lbl.pack(fill="x")
 
         self._draw(None)
-        self.update_state()
+        self._poll = IntervalPoll(self, 5000, self._fetch_async)
+        self._poll.start()
 
-    def update_state(self):
+    def _fetch_async(self):
         threading.Thread(target=self._fetch, daemon=True).start()
-        self.after(5000, self.update_state)
 
     def _fetch(self):
         t_obj = ha_client.get_entity_state(self.temp_entity_id)
         h_obj = ha_client.get_entity_state(self.humidity_entity_id)
-        self.after(0, lambda: self._update_ui(t_obj, h_obj))
+        call_on_ui(lambda: self._update_ui(t_obj, h_obj))
 
     def _update_ui(self, t_obj, h_obj):
-        try:
-            if t_obj is not None:
-                self.temp_val = float(t_obj['state'])
-        except (ValueError, TypeError, KeyError):
-            pass
-        try:
-            if h_obj is not None:
-                self.humidity_val = float(h_obj['state'])
-        except (ValueError, TypeError, KeyError):
-            pass
+        # A missing payload is a fetch failure: keep the last good number.
+        # An explicit unavailable/unknown state clears it so the gauge
+        # cannot mix a stale temperature with a new humidity.
+        if t_obj is not None:
+            self.temp_val = sensor_number(t_obj)
+        if h_obj is not None:
+            self.humidity_val = sensor_number(h_obj)
 
         ratio = mold_risk.mold_risk_ratio(self.temp_val, self.humidity_val)
         self._draw(ratio)

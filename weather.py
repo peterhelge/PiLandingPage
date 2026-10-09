@@ -4,6 +4,7 @@ import os
 from PIL import Image, ImageTk
 import config
 from app_logging import logger
+from ui_thread import call_on_ui
 
 class WeatherWidget(tk.Frame):
     def __init__(self, parent):
@@ -62,7 +63,7 @@ class WeatherWidget(tk.Frame):
 
     def _fetch_weather_data(self):
         if not config.WEATHER_API_KEY:
-            self.after(0, lambda: self.desc_lbl.config(text="No API Key"))
+            call_on_ui(lambda: self.desc_lbl.config(text="No API Key"))
             return
 
         try:
@@ -70,13 +71,12 @@ class WeatherWidget(tk.Frame):
             res = requests.get(url, timeout=10) # Added timeout
             res.raise_for_status()
             data = res.json()
-            
-            # Schedule UI update on the main thread
-            self.after(0, lambda: self._update_ui_with_data(data))
+
+            call_on_ui(lambda: self._update_ui_with_data(data))
 
         except Exception as e:
             logger.error(f"Weather Fetch Error: {e}")
-            self.after(0, lambda: self.desc_lbl.config(text="Error"))
+            call_on_ui(lambda: self.desc_lbl.config(text="Error"))
 
     def _update_ui_with_data(self, data):
         try:
