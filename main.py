@@ -31,31 +31,22 @@ class DashboardPage(tk.Frame):
         
         # Main Container
         # We don't need another container frame, simple pack colums directly into self
-        # Create 3 Columns
+        # Pack columns and the rules between them in visual order.
+        # Packing the rules after all three columns puts both rules on the right edge.
         col1 = tk.Frame(self, bg=config.BG_COLOR)
-        col1.pack(side="left", fill="both", expand=True)
-        
+        div1 = tk.Frame(self, width=1, bg=config.DIVIDER_COLOR)
         col2 = tk.Frame(self, bg=config.BG_COLOR)
-        col2.pack(side="left", fill="both", expand=True)
-        
+        div2 = tk.Frame(self, width=1, bg=config.DIVIDER_COLOR)
         col3 = tk.Frame(self, bg=config.BG_COLOR)
+
+        col1.pack(side="left", fill="both", expand=True)
+        div1.pack(side="left", fill="y")
+        col2.pack(side="left", fill="both", expand=True)
+        div2.pack(side="left", fill="y")
         col3.pack(side="left", fill="both", expand=True)
-        
-        # --- ADD WIDGETS ---
-        
-        # Left Column: Weather
+
         WeatherWidget(col1)
-        
-        # Divider Line 1
-        tk.Frame(self, width=1, bg=config.DIVIDER_COLOR).pack(side="left", fill="y")
-        
-        # Middle Column: Pomodoro Timer
         PomodoroWidget(col2)
-        
-        # Divider Line 2
-        tk.Frame(self, width=1, bg=config.DIVIDER_COLOR).pack(side="left", fill="y")
-        
-        # Right Column: Spotify
         SpotifyWidget(col3)
 
 class DashboardApp(tk.Tk):
