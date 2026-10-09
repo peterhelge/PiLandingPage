@@ -1,5 +1,29 @@
 import tkinter as tk
 
+
+def is_horizontal_swipe(dx, dy, minimum):
+    """A page change is a sideways gesture, not a vertical scroll that drifted."""
+    return abs(dx) >= minimum and abs(dx) > abs(dy)
+
+
+def widget_handles_press(widget, stop_at):
+    """True when this widget or an ancestor already handles the press.
+
+    Buttons, task rows, and the playlist scroller bind <Button-1> themselves.
+    A gesture that starts there is a tap or a scroll, not a page swipe.
+    """
+    current = widget
+    while current is not None and current is not stop_at:
+        try:
+            sequences = current.bind()
+        except tk.TclError:
+            sequences = ()
+        if "<Button-1>" in sequences or "<ButtonRelease-1>" in sequences:
+            return True
+        current = getattr(current, "master", None)
+    return False
+
+
 class SwipeableContainer(tk.Frame):
     def __init__(self, parent, pages, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
@@ -24,6 +48,7 @@ class SwipeableContainer(tk.Frame):
         
         # --- SWIPE LOGIC ---
         self.start_x = None
+        self.start_y = None
         self.min_swipe_distance = 100 # Minimum pixels to register a swipe
         
         # Bind events to the whole container
@@ -59,27 +84,29 @@ class SwipeableContainer(tk.Frame):
     # --- EVENT HANDLERS ---
     
     def on_touch_start(self, event):
+        self.start_x = None
+        self.start_y = None
+        if widget_handles_press(event.widget, self):
+            return
         self.start_x = event.x_root
+        self.start_y = event.y_root
 
     def on_touch_move(self, event):
-        # We can detect "dragging" here if we want continuous feedback,
-        # but for simple page switching, we just wait for release.
+        # Page changes are decided on release.
         pass
 
     def on_touch_end(self, event):
-        if self.start_x is None: return
-        
-        end_x = event.x_root
-        diff_x = end_x - self.start_x
-        
-        # Reset start
+        if self.start_x is None:
+            return
+
+        dx = event.x_root - self.start_x
+        dy = event.y_root - (self.start_y or event.y_root)
         self.start_x = None
-        
-        # Detect Swipe
-        if abs(diff_x) > self.min_swipe_distance:
-            if diff_x < 0:
-                # Swipe Left -> Next Page
-                self.next_page()
-            else:
-                # Swipe Right -> Prev Page
-                self.prev_page()
+        self.start_y = None
+
+        if not is_horizontal_swipe(dx, dy, self.min_swipe_distance):
+            return
+        if dx < 0:
+            self.next_page()
+        else:
+            self.prev_page()
