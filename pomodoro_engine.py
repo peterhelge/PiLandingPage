@@ -20,6 +20,7 @@ class PomodoroEngine:
 
         self.state = "STOPPED"
         self.timer_mode = "FOCUS"
+        self.phase_label = "focus"
         self.pomodoro_count = 0
         self.minutes = FOCUS_MINUTES
         self.seconds = 0
@@ -28,7 +29,8 @@ class PomodoroEngine:
     def start(self):
         if self.state != "RUNNING":
             self.state = "RUNNING"
-            self._tick()
+            # The displayed minute is spent before the first decrement.
+            self._schedule()
 
     def pause(self):
         self.state = "PAUSED"
@@ -42,9 +44,13 @@ class PomodoroEngine:
             self._after_id = None
         self.state = "STOPPED"
         self.timer_mode = "FOCUS"
+        self.phase_label = "focus"
         self.pomodoro_count = 0
         self.minutes = FOCUS_MINUTES
         self.seconds = 0
+
+    def _schedule(self):
+        self._after_id = self.scheduler.after(1000, self._tick)
 
     def _tick(self):
         if self.state != "RUNNING":
@@ -59,10 +65,14 @@ class PomodoroEngine:
         else:
             self.seconds -= 1
 
+        if self.minutes == 0 and self.seconds == 0:
+            self._advance_phase()
+            return
+
         if self.on_tick:
             self.on_tick(self.minutes, self.seconds, self.timer_mode)
 
-        self._after_id = self.scheduler.after(1000, self._tick)
+        self._schedule()
 
     def _advance_phase(self):
         # Fire on_focus_complete BEFORE mutating mode, so a consumer can still
@@ -88,8 +98,9 @@ class PomodoroEngine:
             self.seconds = 0
             phase_label = "focus"
 
+        self.phase_label = phase_label
         if self.on_phase_change:
             self.on_phase_change(self.timer_mode, phase_label, self.pomodoro_count)
-
-        # Continue running immediately (auto-start next phase), no missed second.
-        self._tick()
+        if self.on_tick:
+            self.on_tick(self.minutes, self.seconds, self.timer_mode)
+        self._schedule()
