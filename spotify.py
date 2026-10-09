@@ -6,9 +6,58 @@ import config
 from components import RoundedButton
 from app_logging import logger
 from security import restrict_owner_only, spotify_cache_path
+from ui_thread import IntervalPoll, call_on_ui
 
-PLAYLIST_FETCH_LIMIT = 50   # Spotify's max page size - covers virtually any real library
+PLAYLIST_FETCH_LIMIT = 50   # Spotify's max page size
 PLAYLIST_LIST_HEIGHT = 210  # visible height of the scrollable playlist area (~4 rows)
+PLAYLIST_MAX_PAGES = 20
+
+
+def collect_pages(first_page, next_page, max_pages=PLAYLIST_MAX_PAGES):
+    """Follow Spotify paging until there is no next link."""
+    items = []
+    page = first_page
+    pages = 0
+    while page and pages < max_pages:
+        items.extend(page.get("items") or [])
+        pages += 1
+        if not page.get("next"):
+            break
+        page = next_page(page)
+    return items
+
+
+def playback_summary(playback):
+    """Return (title, device_line, is_playing) for the now-playing labels.
+
+    Episodes and local files can be playing with item is None. Missing
+    device names stay blank instead of raising.
+    """
+    if not playback or not playback.get("is_playing"):
+        return ("Paused / Idle", "", False)
+    device_name = ((playback.get("device") or {}).get("name")) or ""
+    device = f"on {device_name}" if device_name else ""
+    item = playback.get("item")
+    if not isinstance(item, dict):
+        return ("Playing", device, True)
+    track = item.get("name") or "Playing"
+    artists = item.get("artists") or []
+    artist = ""
+    if artists and isinstance(artists[0], dict):
+        artist = artists[0].get("name") or ""
+    text = f"{track}\n{artist}" if artist else track
+    return (text, device, True)
+
+
+def adjusted_volume(current, delta):
+    """Return the next volume, or None when the device has no volume."""
+    if current is None:
+        return None
+    try:
+        value = int(current) + int(delta)
+    except (TypeError, ValueError):
+        return None
+    return max(0, min(100, value))
 
 
 class TouchScrollableRow(RoundedButton):
@@ -206,7 +255,8 @@ class SpotifyWidget(tk.Frame):
         self.playlist_list.pack(fill="x", padx=5)
 
         self.load_playlists()
-        self.check_playback()
+        self._playback_poll = IntervalPoll(self, 5000, self._poll_playback_async)
+        self._playback_poll.start()
 
     def _load_icons(self):
         self.icon_vdown = self.icon_vup = None
@@ -241,55 +291,49 @@ class SpotifyWidget(tk.Frame):
 
     def _fetch_playlists(self):
         try:
-            results = self.sp.current_user_playlists(limit=PLAYLIST_FETCH_LIMIT)
-            # Update UI on Main Thread
-            self.after(0, lambda: self._update_playlist_ui(results))
+            items = collect_pages(
+                self.sp.current_user_playlists(limit=PLAYLIST_FETCH_LIMIT),
+                self.sp.next,
+            )
+            call_on_ui(lambda: self._update_playlist_ui(items))
         except Exception as e:
             logger.error(f"Error fetching playlists: {e}")
         finally:
             restrict_owner_only(spotify_cache_path())
 
-    def _update_playlist_ui(self, results):
-        if not results: return
-        items = sorted(results['items'], key=lambda item: item['name'].casefold())
+    def _update_playlist_ui(self, items):
+        if not items:
+            return
+        items = sorted(
+            (item for item in items if item and item.get("name") and item.get("uri")),
+            key=lambda item: item["name"].casefold(),
+        )
+        self.playlists = []
         self.playlist_list.clear()
         for item in items:
-            uri = item['uri']
-            self.playlists.append((item['name'], uri))
-            self.playlist_list.add_row(item['name'], command=lambda u=uri: self._play_uri(u))
+            uri = item["uri"]
+            self.playlists.append((item["name"], uri))
+            self.playlist_list.add_row(item["name"], command=lambda u=uri: self._play_uri(u))
 
-    def check_playback(self):
-        # Poll in a background thread
-        t = threading.Thread(target=self._poll_spotify, daemon=True)
-        t.start()
-
-        # Schedule next poll
-        self.after(5000, self.check_playback)
+    def _poll_playback_async(self):
+        threading.Thread(target=self._poll_spotify, daemon=True).start()
 
     def _poll_spotify(self):
-        if not self.sp: return
+        if not self.sp:
+            return
         try:
             playback = self.sp.current_playback()
-            # Update UI on main thread
-            self.after(0, lambda: self._update_ui_playback(playback))
+            call_on_ui(lambda: self._update_ui_playback(playback))
         except Exception:
             pass
         finally:
             restrict_owner_only(spotify_cache_path())
 
     def _update_ui_playback(self, playback):
-        try:
-            if playback and playback['is_playing']:
-                track = playback['item']['name']
-                artist = playback['item']['artists'][0]['name']
-                device = playback['device']['name']
-                self.track_lbl.config(text=f"{track}\n{artist}")
-                self.device_lbl.config(text=f"on {device}")
-                self._set_playing(True)
-            else:
-                self.track_lbl.config(text="Paused / Idle")
-                self._set_playing(False)
-        except Exception: pass
+        title, device, playing = playback_summary(playback)
+        self.track_lbl.config(text=title)
+        self.device_lbl.config(text=device)
+        self._set_playing(playing)
 
     def _set_playing(self, playing):
         if playing == self.is_playing:
@@ -309,9 +353,9 @@ class SpotifyWidget(tk.Frame):
             else:
                 dev_id = self.get_active_device_id()
                 self.sp.start_playback(device_id=dev_id)
-            # Trigger an immediate check (optional, or just wait for next poll)
-            self.after(500, self.check_playback)
-        except: pass
+            call_on_ui(lambda: self._playback_poll.refresh_soon(500))
+        except Exception:
+            pass
 
     def next_track(self):
         self._run_async(lambda: self.sp.next_track() if self.sp else None)
@@ -334,11 +378,12 @@ class SpotifyWidget(tk.Frame):
             # We need current volume first.
             # Optimistic update is hard without current state, so we fetch playback
             pb = self.sp.current_playback()
-            if pb and pb['device']:
-                curr = pb['device']['volume_percent']
-                new_vol = max(0, min(100, curr + delta))
+            device = (pb or {}).get("device") or {}
+            new_vol = adjusted_volume(device.get("volume_percent"), delta)
+            if new_vol is not None:
                 self.sp.volume(new_vol)
-        except: pass
+        except Exception:
+            pass
 
     def _play_uri(self, uri):
         if self.sp:

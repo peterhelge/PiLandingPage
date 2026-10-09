@@ -3,6 +3,20 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
+def env_int(name, default):
+    """Read a positive integer from the environment, or return default."""
+    raw = os.getenv(name)
+    if raw is None or not str(raw).strip():
+        return default
+    try:
+        value = int(str(raw).strip())
+    except ValueError:
+        return default
+    if value <= 0:
+        return default
+    return value
+
 # --- API KEYS ---
 WEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")
 WEATHER_LAT = os.getenv("WEATHER_LAT")
@@ -55,11 +69,11 @@ LAUNDRY_MOLD_RISK_HUMIDITY_ENTITY = os.getenv("LAUNDRY_MOLD_RISK_HUMIDITY_ENTITY
 TODOIST_API_TOKEN = os.getenv("TODOIST_API_TOKEN")
 TODOIST_MAJOR_PROJECT_NAME = os.getenv("TODOIST_MAJOR_PROJECT_NAME", "Today - Major")
 TODOIST_MINOR_PROJECT_NAME = os.getenv("TODOIST_MINOR_PROJECT_NAME", "Today - Minor")
-TODOIST_SYNC_INTERVAL_MS = int(os.getenv("TODOIST_SYNC_INTERVAL_MS", "120000"))
+TODOIST_SYNC_INTERVAL_MS = env_int("TODOIST_SYNC_INTERVAL_MS", 120000)
 
 # --- TODO SCREEN ---
-TODO_MAX_MAJOR = int(os.getenv("TODO_MAX_MAJOR", "4"))
-TODO_MAX_MINOR = int(os.getenv("TODO_MAX_MINOR", "8"))
+TODO_MAX_MAJOR = env_int("TODO_MAX_MAJOR", 4)
+TODO_MAX_MINOR = env_int("TODO_MAX_MINOR", 8)
 TODO_DATA_DIR = os.getenv("TODO_DATA_DIR", "todo_data")
 TODO_ACCENT = "#00BFA5"    # Teal, distinct from SPOTIFY_GREEN/POMODORO_BLUE/WEATHER_YELLOW
 TODO_DONE_COLOR = "#2A2A2A"
