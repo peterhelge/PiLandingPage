@@ -1,3 +1,4 @@
+import copy
 import threading
 import tkinter as tk
 from datetime import date, datetime
@@ -11,6 +12,51 @@ from pomodoro_engine import PomodoroEngine
 
 def _now_str():
     return datetime.now().isoformat(timespec="seconds")
+
+
+def overlay_local_edits(snapshot, local_state):
+    """Keep toggles and focus sessions that happened while a sync was in flight.
+
+    The worker syncs a copy. This runs on the UI thread and puts any newer
+    local done-state or session log back on top of that copy.
+    """
+    merged = copy.deepcopy(snapshot)
+    for section in ("major_tasks", "minor_tasks"):
+        local_by_id = {
+            task.get("id"): task
+            for task in local_state.get(section, [])
+            if task.get("id")
+        }
+        seen = set()
+        section_tasks = []
+        for task in merged.get(section, []):
+            local = local_by_id.get(task.get("id"))
+            if local is not None:
+                task = _prefer_local_task(task, local)
+            section_tasks.append(task)
+            if task.get("id"):
+                seen.add(task["id"])
+        for task_id, local in local_by_id.items():
+            if task_id in seen:
+                continue
+            if local.get("pending_push") or local.get("sessions"):
+                section_tasks.append(copy.deepcopy(local))
+        merged[section] = section_tasks
+    return merged
+
+
+def _prefer_local_task(remote, local):
+    merged = dict(remote)
+    if local.get("pending_push"):
+        merged["done"] = local.get("done", False)
+        merged["pending_push"] = True
+        if local.get("updated_at"):
+            merged["updated_at"] = local["updated_at"]
+    local_sessions = local.get("sessions") or []
+    remote_sessions = merged.get("sessions") or []
+    if local_sessions and len(local_sessions) >= len(remote_sessions):
+        merged["sessions"] = copy.deepcopy(local_sessions)
+    return merged
 
 
 def _minutes_logged(task):
@@ -107,6 +153,7 @@ class TaskTimerPanel(tk.Frame):
         self.active_task_id = None
         self.active_task_text = None
         self._session_start = None
+        self._phase_label = "focus"
 
         self.engine = PomodoroEngine(self, on_tick=self._on_tick, on_phase_change=self._on_phase_change,
                                       on_focus_complete=self._on_focus_complete)
@@ -139,6 +186,7 @@ class TaskTimerPanel(tk.Frame):
         self.active_task_id = task_id
         self.active_task_text = text
         self.engine.reset()
+        self._phase_label = "focus"
         self.task_lbl.config(text=text, fg="white")
         self._begin_focus_timing()
         self.engine.start()
@@ -169,17 +217,21 @@ class TaskTimerPanel(tk.Frame):
             self.phase_lbl.config(text="Paused", fg="orange")
             self.pause_btn.set_text(text="Resume")
         else:
+            if self._session_start is None and self.engine.timer_mode == "FOCUS":
+                self._begin_focus_timing()
             self.engine.start()
-            phase = "short_break" if self.engine.timer_mode == "BREAK" else "focus"
+            phase = self._phase_label if self.engine.timer_mode == "BREAK" else "focus"
             self.phase_lbl.config(text=self.PHASE_CAPTIONS.get(phase, "Focus"), fg="#AAAAAA")
             self.pause_btn.set_text(text="Pause")
 
     def _reset_clicked(self):
         self._finalize_session(completed=False)
         self.engine.reset()
+        self._session_start = None
+        self._phase_label = "focus"
         self.time_lbl.config(text=f"{self.engine.minutes:02d}:{self.engine.seconds:02d}", fg=config.TODO_ACCENT)
         self.phase_lbl.config(text="Focus", fg="#AAAAAA")
-        self.pause_btn.set_text(text="Pause")
+        self.pause_btn.set_text(text="Start")
 
     def _begin_focus_timing(self):
         self._session_start = datetime.now()
@@ -188,6 +240,7 @@ class TaskTimerPanel(tk.Frame):
         self.time_lbl.config(text=f"{minutes:02d}:{seconds:02d}")
 
     def _on_phase_change(self, mode, phase_label, count):
+        self._phase_label = phase_label
         color = self.PHASE_COLORS.get(phase_label) or config.TODO_ACCENT
         self.phase_lbl.config(text=self.PHASE_CAPTIONS.get(phase_label, "Focus"), fg="#AAAAAA")
         self.time_lbl.config(fg=color)
@@ -221,6 +274,7 @@ class TodoPage(tk.Frame):
 
         self.state = todo_store.load_state()
         self._sync_in_progress = False
+        self._sync_again = False
         self._sync_debounce_id = None
 
         self._build_header()
@@ -341,6 +395,7 @@ class TodoPage(tk.Frame):
 
     def trigger_sync(self, manual=False):
         if self._sync_in_progress:
+            self._sync_again = True
             return
         if not config.TODOIST_API_TOKEN:
             self.state["last_sync_error"] = "Todoist not configured"
@@ -348,20 +403,35 @@ class TodoPage(tk.Frame):
             return
         self._sync_in_progress = True
         self._update_sync_status_label()
-        threading.Thread(target=self._sync_worker, daemon=True).start()
+        # The worker only mutates this copy. The UI thread keeps editing self.state.
+        snapshot = copy.deepcopy(self.state)
+        holder = {}
+        threading.Thread(
+            target=self._sync_worker, args=(snapshot, holder), daemon=True
+        ).start()
+        self._watch_sync(snapshot, holder)
 
-    def _sync_worker(self):
+    def _sync_worker(self, snapshot, holder):
         try:
-            todoist_sync.sync(self.state)
-            todo_store.save_state(self.state)
-            self.after(0, self._on_sync_done)
+            todoist_sync.sync(snapshot)
         except TodoistSyncError:
-            todo_store.save_state(self.state)
-            self.after(0, self._on_sync_done)
+            pass
+        holder["done"] = True
 
-    def _on_sync_done(self):
+    def _watch_sync(self, snapshot, holder):
+        if not holder.get("done"):
+            self.after(100, lambda: self._watch_sync(snapshot, holder))
+            return
+        self._apply_sync(snapshot)
+
+    def _apply_sync(self, snapshot):
+        self.state = overlay_local_edits(snapshot, self.state)
+        todo_store.save_state(self.state)
         self._sync_in_progress = False
         self._render()
+        if self._sync_again:
+            self._sync_again = False
+            self.trigger_sync()
 
     def _debounced_sync(self):
         if self._sync_debounce_id:
