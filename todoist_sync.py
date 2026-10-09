@@ -18,6 +18,32 @@ def _now_str():
     return datetime.now().isoformat(timespec="seconds")
 
 
+def select_visible_tasks(local_tasks, new_tasks, max_items):
+    """Choose which tasks fit on screen.
+
+    Unpushed local edits are always kept. Other active tasks fill the cap
+    before completed ones, so finishing the list does not hide new work.
+    Returns (visible, overflow) where overflow counts active tasks that
+    did not fit.
+    """
+    pinned = [task for task in local_tasks if task.get("pending_push")]
+    rest = [task for task in local_tasks if not task.get("pending_push")]
+    active = [task for task in rest if not task.get("done")]
+    done = [task for task in rest if task.get("done")]
+
+    visible = list(pinned)
+    limit = max(max_items, len(pinned))
+    overflow = 0
+    for task in active + list(new_tasks):
+        if len(visible) < limit:
+            visible.append(task)
+        else:
+            overflow += 1
+    spare = max(0, max_items - len(visible))
+    visible.extend(done[:spare])
+    return visible, overflow
+
+
 class TodoistSync:
     """Handles Todoist API token auth + push/pull merge against two projects
     (major/minor). sync() is blocking - callers must run it off the Tk main
@@ -133,31 +159,27 @@ class TodoistSync:
             updated_list.append(local)
 
         known_ids = {t.get("todoist_task_id") for t in updated_list}
-        slots_left = max_items - len(updated_list)
-        overflow = 0
+        new_tasks = []
         for remote in active_tasks:
             if remote.id in known_ids:
                 continue
-            if slots_left > 0:
-                now = _now_str()
-                task = {
-                    "id": f"todoist:{remote.id}",
-                    "text": remote.content,
-                    "done": False,
-                    "todoist_task_id": remote.id,
-                    "todoist_project_id": project.id,
-                    "pending_push": False,
-                    "created_at": now,
-                    "updated_at": now,
-                }
-                if section_key == "major_tasks":
-                    task["sessions"] = []
-                updated_list.append(task)
-                slots_left -= 1
-            else:
-                overflow += 1
+            now = _now_str()
+            task = {
+                "id": f"todoist:{remote.id}",
+                "text": remote.content,
+                "done": False,
+                "todoist_task_id": remote.id,
+                "todoist_project_id": project.id,
+                "pending_push": False,
+                "created_at": now,
+                "updated_at": now,
+            }
+            if section_key == "major_tasks":
+                task["sessions"] = []
+            new_tasks.append(task)
 
-        state[section_key] = updated_list
+        visible, overflow = select_visible_tasks(updated_list, new_tasks, max_items)
+        state[section_key] = visible
         state[overflow_key] = overflow
 
 
