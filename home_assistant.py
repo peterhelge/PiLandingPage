@@ -2,6 +2,7 @@ import tkinter as tk
 import config
 from components import RoundedButton
 from ha_api import ha_client
+from security import INSECURE_HTTP_NOTICE
 import mold_risk
 import threading
 from app_logging import logger
@@ -216,11 +217,18 @@ class HomeAssistantPage(tk.Frame):
         if config.LAUNDRY_MOLD_RISK_TEMP_ENTITY and config.LAUNDRY_MOLD_RISK_HUMIDITY_ENTITY:
             self.mold_gauges.append(("Laundry Mould Risk", config.LAUNDRY_MOLD_RISK_TEMP_ENTITY, config.LAUNDRY_MOLD_RISK_HUMIDITY_ENTITY))
 
-        if not config.HA_ENTITIES and not self.mold_gauges:
+        if ha_client.disabled_reason:
+            tk.Label(self.grid_frame, text=ha_client.disabled_reason,
+                     font=config.FONT_MED, bg=config.BG_COLOR, fg="#E65100",
+                     wraplength=680, justify="center").pack(pady=10)
+        elif not config.HA_ENTITIES and not self.mold_gauges:
             tk.Label(self.grid_frame,
                      text="No Entities Configured.\nAdd HA_ENTITIES to .env",
                      font=config.FONT_MED, bg=config.BG_COLOR, fg="gray").pack()
         else:
+            if ha_client.insecure_http:
+                tk.Label(self.grid_frame, text=INSECURE_HTTP_NOTICE,
+                         font=config.FONT_SMALL, bg=config.BG_COLOR, fg="#E65100").pack(pady=(0, 8))
             self.create_widgets()
 
     def create_widgets(self):

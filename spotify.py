@@ -5,6 +5,7 @@ from spotipy.oauth2 import SpotifyOAuth
 import config
 from components import RoundedButton
 from app_logging import logger
+from security import restrict_owner_only, spotify_cache_path
 
 PLAYLIST_FETCH_LIMIT = 50   # Spotify's max page size - covers virtually any real library
 PLAYLIST_LIST_HEIGHT = 210  # visible height of the scrollable playlist area (~4 rows)
@@ -147,9 +148,12 @@ class SpotifyWidget(tk.Frame):
                     client_id=config.SPOTIPY_CLIENT_ID,
                     client_secret=config.SPOTIPY_CLIENT_SECRET,
                     redirect_uri=config.SPOTIPY_REDIRECT_URI,
-                    scope=config.SPOTIPY_SCOPE
+                    scope=config.SPOTIPY_SCOPE,
+                    cache_path=spotify_cache_path(),
                 ))
             except Exception as e: logger.error(f"Spotify Auth Failed: {e}")
+            finally:
+                restrict_owner_only(spotify_cache_path())
 
         # Eyebrow title, muted - identifies the widget without competing visually
         tk.Label(self, text="SPOTIFY", font=("Verdana", 10, "bold"),
@@ -242,6 +246,8 @@ class SpotifyWidget(tk.Frame):
             self.after(0, lambda: self._update_playlist_ui(results))
         except Exception as e:
             logger.error(f"Error fetching playlists: {e}")
+        finally:
+            restrict_owner_only(spotify_cache_path())
 
     def _update_playlist_ui(self, results):
         if not results: return
@@ -268,6 +274,8 @@ class SpotifyWidget(tk.Frame):
             self.after(0, lambda: self._update_ui_playback(playback))
         except Exception:
             pass
+        finally:
+            restrict_owner_only(spotify_cache_path())
 
     def _update_ui_playback(self, playback):
         try:

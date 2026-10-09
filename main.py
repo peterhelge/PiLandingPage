@@ -1,7 +1,10 @@
-import tkinter as tk
 import os
+os.umask(0o077)
+
+import tkinter as tk
 import config
 from app_logging import logger
+from security import restrict_known_secret_files
 from weather import WeatherWidget
 from pomodoro import PomodoroWidget
 from spotify import SpotifyWidget
@@ -11,6 +14,7 @@ from home_assistant import HomeAssistantPage
 from settings_page import SettingsPage
 from todo_page import TodoPage
 
+restrict_known_secret_files()
 logger.info("=== App starting ===")
 
 # Check for assets and generate if missing (or if new icons were added since
@@ -69,7 +73,6 @@ class DashboardApp(tk.Tk):
         self.geometry(f"{screen_width}x{screen_height}+0+0")
         
         self.after(100, lambda: self.attributes('-fullscreen', True))
-        self.bind("<Escape>", lambda event: self.destroy())
 
         # ================= LAYOUT =================
         

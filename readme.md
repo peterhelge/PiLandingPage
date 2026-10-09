@@ -36,8 +36,8 @@ A sleek, touch-friendly smart dashboard designed for the Raspberry Pi 4 and the 
 - **Page 3**: Accessible by swiping left twice.
 
 ### 6. ⚙️ System Settings
-- **Shutdown & Reboot**: Gracefully power off or restart your Pi from the UI.
-- **Exit Kiosk**: Easily close the app for maintenance.
+- **Shutdown & Reboot**: Power off or restart the Pi. Each button needs a second tap, and the command is non-interactive `sudo -n` so a password prompt cannot hang the screen.
+- **Exit Kiosk**: Closes the app for maintenance. Also needs a second tap. The Escape key does not close the kiosk.
 - **Protection**: Located on Page 4 (Swipe left three times) to prevent accidental clicks.
 
 ---
@@ -65,8 +65,9 @@ Before running the code, you need to set up keys for the APIs.
 ### 3. Home Assistant
 1. In Home Assistant, go to your User Profile (bottom left) -> **Security**.
 2. Create a **Long-Lived Access Token**.
-3. Note down the **Entity IDs** you want to control (e.g., `light.living_room`).
-4. Optional - mould-risk gauges: if you have a temperature and humidity sensor pair (e.g. in an attic/crawlspace or a laundry room), note down their Entity IDs too for `MOLD_RISK_TEMP_ENTITY`/`MOLD_RISK_HUMIDITY_ENTITY` (attic) and/or `LAUNDRY_MOLD_RISK_TEMP_ENTITY`/`LAUNDRY_MOLD_RISK_HUMIDITY_ENTITY` (laundry) below. Each gauge simply doesn't appear if its pair isn't set.
+3. Prefer an `https://` URL for the instance. Plain `http://` is allowed for local names (`homeassistant.local`, a single-label hostname) and private addresses, and the Home Control page warns that the token can be read on that network. HTTP to a public host is refused. Set `HA_ALLOW_INSECURE_HTTP=1` only if you accept that anyone on the path can read the token.
+4. Note down the **Entity IDs** you want to control (e.g., `light.living_room`).
+5. Optional - mould-risk gauges: if you have a temperature and humidity sensor pair (e.g. in an attic/crawlspace or a laundry room), note down their Entity IDs too for `MOLD_RISK_TEMP_ENTITY`/`MOLD_RISK_HUMIDITY_ENTITY` (attic) and/or `LAUNDRY_MOLD_RISK_TEMP_ENTITY`/`LAUNDRY_MOLD_RISK_HUMIDITY_ENTITY` (laundry) below. Each gauge simply doesn't appear if its pair isn't set.
 
 ### 4. Todoist
 1. Go to Todoist **Settings -> Integrations -> Developer** and copy your **API token**.
@@ -106,8 +107,10 @@ SPOTIPY_CLIENT_SECRET=your_secret
 SPOTIPY_REDIRECT_URI=http://127.0.0.1:8080/callback
 
 # Home Assistant
+# Prefer https://. http:// is only kept for a local/private host.
 HA_BASE_URL=http://homeassistant.local:8123
 HA_ACCESS_TOKEN=your_long_token_here
+# HA_ALLOW_INSECURE_HTTP=1
 # Any entity here (lights, switches, or plain temp/humidity sensors) gets its own
 # widget automatically. Name sensor entities with "temperature"/"humidity" in the
 # id so the right icon is picked, e.g. sensor.laundry_temperature.

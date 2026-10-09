@@ -37,6 +37,8 @@ FONT_PLAYLIST = ("Verdana", 14)
 # --- HOME ASSISTANT ---
 HA_BASE_URL = os.getenv("HA_BASE_URL", "http://homeassistant.local:8123")
 HA_ACCESS_TOKEN = os.getenv("HA_ACCESS_TOKEN")
+# Plain HTTP to a public host is refused. Set this to send the token anyway.
+HA_ALLOW_INSECURE_HTTP = os.getenv("HA_ALLOW_INSECURE_HTTP", "").strip().lower() in ("1", "true", "yes", "on")
 # Comma separated string in .env, converted to list here
 _ha_entities_str = os.getenv("HA_ENTITIES", "")
 HA_ENTITIES = [e.strip() for e in _ha_entities_str.split(",") if e.strip()]

@@ -5,6 +5,7 @@ from datetime import date, datetime
 
 import config
 from app_logging import logger
+from security import restrict_owner_tree
 
 STATE_PATH = os.path.join(config.TODO_DATA_DIR, "state.json")
 HISTORY_DIR = os.path.join(config.TODO_DATA_DIR, "history")
@@ -38,6 +39,7 @@ def _atomic_write_json(path, obj):
         with os.fdopen(fd, "w", encoding="utf-8") as f:
             json.dump(obj, f, indent=2)
         os.replace(tmp_path, path)
+        restrict_owner_tree(config.TODO_DATA_DIR)
     except Exception:
         if os.path.exists(tmp_path):
             os.remove(tmp_path)
